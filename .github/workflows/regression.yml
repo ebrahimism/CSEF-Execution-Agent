@@ -1,0 +1,28 @@
+name: CSEF regression (migration)
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  python-tests-windows:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install project and pytest
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install pytest
+      - name: Run historical regression suite
+        run: python -m pytest -o addopts='' -q tests --junitxml=csef-junit.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: csef-migration-junit
+          path: csef-junit.xml
+          if-no-files-found: ignore
