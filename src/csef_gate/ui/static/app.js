@@ -3,6 +3,23 @@
   "use strict";
   const words = {
     fa: {
+      execution: "اجرا و بازیابی", verification: "آزمون و Gate", delivery: "تحویل و شواهد",
+      reviewTitle: "آزمون محدود REVIEW",
+      reviewDescription: "فقط پس از بازبینی دستی کد و انتخاب تصویر Docker با digest ثابت. این آزمون PASS یا مجوز تحویل صادر نمی‌کند.",
+      runIdLabel: "شناسهٔ اجرا", dockerImage: "تصویر Docker با SHA-256 ثابت",
+      reviewConsent: "کد این اجرا را شخصاً بررسی کرده‌ام و اجرای آزمایشی را مجاز می‌دانم.",
+      runReview: "اجرای آزمون محدود",
+      controlPanelTitle: "مرکز کنترل پروژه", controlPanelSubtitle: "وضعیت اجرا، بازیابی، ارزیابی و تحویل براساس شواهد واقعی هسته.",
+      refresh: "به‌روزرسانی", evidenceRoadmap: "نقشهٔ واقعی مراحل پروژه", noFakeProgress: "بدون درصد ساختگی",
+      phaseDisclaimer: "هر مرحله فقط با شواهد معتبر پیش می‌رود؛ ایجاد تسک به معنی تأیید مستقل نیست.",
+      executionRecovery: "اجرا و بازیابی", testCenter: "آزمون و ارزیابی مستقل",
+      gateAuthorityReminder: "داشبورد نمی‌تواند PASS جعلی، تغییر معیارهای منجمد یا اجرای کد نامطمئن صادر کند.",
+      deliveryCenter: "تحویل و شواهد", gated: "وابسته به Gate",
+      deliveryDisclaimer: "تحویل و اثبات S7 پس از پذیرش مستقل و آزمون نصب واقعی اعتبار دارد.",
+      ownerDecisionsTitle: "نیازمندی‌ها و تصمیم‌های مالک", changeReason: "دلیل تغییر",
+      changeReasonHint: "چرا این پاسخ را تغییر می‌دهید؟",
+      saveOwnerAnswers: "ثبت نسخهٔ جدید پاسخ‌ها", auditProviders: "حسابرسی و مصرف API",
+      recentChanges: "آخرین رویدادها",
       workspace:"فضای کاری",overview:"نمای کلی",projects:"پروژه‌ها",taskGraph:"گراف وظایف",activity:"فعالیت‌ها",
       system:"سیستم",settings:"تنظیمات",localOnly:"محیط محلی و محدود",localNotice:"فقط روی همین دستگاه",
       personalSpace:"فضای شخصی",localConnected:"اتصال محلی",commandCenter:"COMMAND CENTER",
@@ -49,6 +66,23 @@
       showDetails:"جزئیات وظیفه"
     },
     en: {
+      execution: "Execution & Recovery", verification: "Tests & Gate", delivery: "Delivery & Evidence",
+      reviewTitle: "REVIEW-only evaluation",
+      reviewDescription: "Run only after manually reviewing the code and selecting an immutable Docker image. This cannot grant PASS or release.",
+      runIdLabel: "Run ID", dockerImage: "Docker image with pinned SHA-256",
+      reviewConsent: "I have reviewed this source and explicitly allow a reviewed-only measurement.",
+      runReview: "Run limited review",
+      controlPanelTitle: "Project control center", controlPanelSubtitle: "Evidence-based execution, recovery, verification and delivery.",
+      refresh: "Refresh", evidenceRoadmap: "Evidence-based project journey", noFakeProgress: "No invented progress",
+      phaseDisclaimer: "A stage advances only with evidence; proposed code is not independent acceptance.",
+      executionRecovery: "Execution & recovery", testCenter: "Independent verification & tests",
+      gateAuthorityReminder: "The dashboard cannot grant fake PASS, change frozen tests or run untrusted code.",
+      deliveryCenter: "Delivery & evidence", gated: "Gate controlled",
+      deliveryDisclaimer: "Delivery and S7 verification require independent acceptance and real install QA.",
+      ownerDecisionsTitle: "Owner requirements & decisions", changeReason: "Change reason",
+      changeReasonHint: "Why are you updating this answer?",
+      saveOwnerAnswers: "Save new owner revision", auditProviders: "Audit & API usage",
+      recentChanges: "Recent events",
       workspace:"Workspace",overview:"Overview",projects:"Projects",taskGraph:"Task Graph",activity:"Activity",
       system:"System",settings:"Settings",localOnly:"Local, limited access",localNotice:"This device only",
       personalSpace:"Personal workspace",localConnected:"Local connection",commandCenter:"COMMAND CENTER",
@@ -148,6 +182,7 @@
     $("today-label").textContent=new Intl.DateTimeFormat(lang==="fa"?"fa-IR":"en-GB",{dateStyle:"medium"}).format(new Date());
     if(state.overview)renderOverview();
     renderGraph();
+    window.dispatchEvent(new CustomEvent("csef:language",{detail:{lang}}));
   }
   async function load() {
     try {
@@ -157,7 +192,8 @@
       if(!state.selected&&state.projects.length)state.selected=state.projects[0].slug;
       renderOverview();
       if(state.selected)await selectProject(state.selected,false);
-      else {state.current=null;renderGraph();}
+      else {state.current=null;renderGraph();
+        window.dispatchEvent(new CustomEvent("csef:project",{detail:{slug:null,project:null,csrf:state.csrf}}));}
     }catch(err){toast(tr("errorPrefix")+err.message,true);}
   }
   function renderOverview() {
@@ -216,7 +252,9 @@
     $("generate-plan").disabled=false;renderProjects();
     try {
       state.current=await request("/api/projects/"+encodeURIComponent(slug));
-      renderGraph();if(scroll)$("graph").scrollIntoView({behavior:"smooth",block:"start"});
+      renderGraph();
+      window.dispatchEvent(new CustomEvent("csef:project",{detail:{slug,project:state.current,csrf:state.csrf}}));
+      if(scroll)$("graph").scrollIntoView({behavior:"smooth",block:"start"});
     }catch(err){state.current=null;renderGraph();toast(tr("errorPrefix")+err.message,true);}
   }
   function renderGraph() {
@@ -314,12 +352,22 @@
     $("project-filter").addEventListener("input",renderProjects);
     $("project-select").addEventListener("change",event=>{
       if(event.target.value)selectProject(event.target.value,false);
-      else{state.selected=null;state.current=null;renderProjects();renderGraph();$("generate-plan").disabled=true;}
+      else{state.selected=null;state.current=null;renderProjects();renderGraph();$("generate-plan").disabled=true;
+        window.dispatchEvent(new CustomEvent("csef:project",{detail:{slug:null,project:null,csrf:state.csrf}}));}
     });
     $("generate-plan").addEventListener("click",()=>{if(state.selected)$("plan-dialog").showModal();});
     $("close-plan").addEventListener("click",()=>$("plan-dialog").close());
     $("cancel-plan").addEventListener("click",()=>$("plan-dialog").close());
     $("plan-form").addEventListener("submit",plan);
+    window.addEventListener("csef:refresh",()=>load());
+    window.addEventListener("csef:control",event=>{
+      const data=event.detail, progress=new Map((data.task_progress||[]).map(x=>[x.id,x]));
+      document.querySelectorAll(".graph-node").forEach(el=>{
+        const item=progress.get(el.dataset.taskId);
+        el.classList.toggle("coded-unverified", Boolean(item && item.status==="coded_unverified"));
+        el.classList.toggle("coding-unknown",Boolean(item && item.status==="unknown"));
+      });
+    });
     window.addEventListener("resize",()=>requestAnimationFrame(drawEdges));
     try{
       state.csrf=(await request("/api/session")).csrf_token;
