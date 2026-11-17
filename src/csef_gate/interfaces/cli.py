@@ -3,10 +3,11 @@ from pathlib import Path
 
 from ..core import Refused, read_json
 from ..workflow import Workflow
+from ..workflow.stages import next_stage
 
 
 def configure(sub):
-    parser = sub.add_parser("workflow", help="continue the six-stage engineering workflow")
+    parser = sub.add_parser("workflow", help="continue the staged engineering workflow")
     commands = parser.add_subparsers(dest="workflow_command", required=True)
     for name in ("init", "status", "attach", "continue"):
         command = commands.add_parser(name)
@@ -20,6 +21,11 @@ def configure(sub):
         if name == "continue":
             command.add_argument("--steps", type=int, default=24)
             command.add_argument("--measure-only", action="store_true")
+            command.add_argument("--provider", choices=("openai", "anthropic", "codex"))
+            command.add_argument("--model", help="required for direct APIs; no model is chosen implicitly")
+            command.add_argument("--executor", choices=("codex", "docker-reviewed"),
+                                 help="explicit execution adapter; Docker reviewed requires --measure-only")
+            command.add_argument("--docker-image", help="immutable image@sha256:digest for Docker reviewed mode")
 
 
 def execute(args):
@@ -35,9 +41,21 @@ def execute(args):
         return workflow.attach_code(args.project, args.spec)
     state = workflow.status()
     if state["status"] in ("awaiting_owner", "complete"):
-        return state  # Questions/status work even when no model CLI is installed.
-    from ..backends import CodexAgent, CodexSandbox
-    from ..model_session import CodexJSON
-    client = CodexJSON()
+        return state  # No model binary or credentials required to inspect state.
+    from ..providers.direct import select_provider
+    client, agent = select_provider(args.provider, args.model)
+    stage = next_stage(workflow.book)
+    executor = None
+    if args.executor == "codex":
+        from ..backends import CodexSandbox
+        executor = CodexSandbox()
+    elif args.executor == "docker-reviewed":
+        if not args.measure_only:
+            raise Refused("Docker reviewed executor requires --measure-only")
+        from ..execution.docker_reviewed import DockerReviewedExecutor
+        executor = DockerReviewedExecutor(image=args.docker_image)
+    if stage["position"] >= 3 and executor is None:
+        raise Refused("coding evaluation requires --executor; no unsafe host fallback")
+    # The controller will also refuse at a later coding stage if no executor exists.
     return workflow.run(max_steps=args.steps, client=client, reviewer=client,
-                        agent=CodexAgent(), executor=CodexSandbox(), measure_only=args.measure_only)
+                        agent=agent, executor=executor, measure_only=args.measure_only)

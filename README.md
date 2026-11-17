@@ -1,6 +1,6 @@
 # CSEF — Execution Agent (Provider-Agnostic Migration)
 
-**Status: source migration in progress; not a production release.**
+**Status: migrated core with direct API adapter development; not a production release.**
 
 CSEF is intended to be a provider-agnostic software engineering controller that persists project goals and accepted decisions, scopes coding proposals, independently evaluates real program behavior, and records verifiable evidence. It should accept coding/model providers through versioned contracts rather than require one vendor or a particular CLI.
 
@@ -10,9 +10,9 @@ This branch imports the tested historical code from [ebrahimism/csef-builder](ht
 
 - **Reused, not rebuilt:** independent Gate, strict JSON/scope verification, project context, lifecycle/requirements/questions, SQLite persistence/migration, event journal, leases, stage workflow, tests, examples and historical evidence.
 - **Previously tested in source:** the source ledger reports T001–T007 complete and 237 tests passing. **These results are historical and must be rerun in this repository; they do not certify this branch.**
-- **Current coupling:** `model_session.CodexJSON`, `backends.CodexAgent`, `backends.CodexSandbox`, and CLI defaults use installed Codex. This migration has **not yet removed** that runtime requirement.
+- **Current coupling:** legacy `CodexJSON`, `CodexAgent`, and `CodexSandbox` remain available but are no longer automatically selected by the CLI. OpenAI Responses and Anthropic Messages direct adapters are implemented and exercised with scripted tests; live API compatibility remains unverified.
 - **Security:** the native Windows sandbox previously failed the local TCP isolation probe. Normal runs block; `--measure-only` remains REVIEW with no checkpoint. No arbitrary untrusted execution, deployment, or self-promotion is authorized.
-- **Not yet established:** direct two-provider API integration, complete resume at all interruption boundaries, real independent guest isolation, production packaging, and verified savings from decomposing tasks.
+- **Not yet established:** credentialed end-to-end testing with the two direct APIs, complete resume at all interruption boundaries, independent production-grade guest isolation, production packaging, and verified savings from decomposing tasks. A Docker reviewed-only executor cannot issue PASS.
 
 ## Roadmap (incremental; preserve tested behavior)
 
@@ -35,7 +35,7 @@ python -m pip install pytest
 python -m pytest -o addopts='' -q tests
 ```
 
-These commands are instructions, not a claim that tests have been run here. The historical Codex-backed live workflow needs Codex CLI and authentication; offline ProjectBook operations and scripted tests do not imply live provider independence.
+These commands are instructions, not a claim that tests have passed on the newest feature branch. See [direct API provider instructions](docs/PROVIDERS.md). Direct-model document creation and code proposals do not require Codex CLI; strict code execution still needs an independently verified backend, while the reviewed-only Docker adapter deliberately returns REVIEW. Mock tests do not establish live API reliability.
 
 ## Engineering rules
 
