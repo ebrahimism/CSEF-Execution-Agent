@@ -112,6 +112,9 @@ class DockerReviewedExecutor:
         relative_name(entrypoint)
         arguments = [value.replace(str(scratch), "/scratch") for value in args]
         result = self._command(snapshot, scratch, ["/src/" + entrypoint, *arguments], timeout)
+        # The versioned VerificationCase contract forbids unrecognized fields.
+        # Command digest remains available in the boundary probe process receipt.
+        result.pop("command_sha256", None)
         after, _ = manifest(snapshot, files)
         if after != before:
             raise Refused("Docker source snapshot changed during execution")

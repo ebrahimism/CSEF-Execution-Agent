@@ -157,4 +157,4 @@ def test_no_provider_but_intake_status_and_guarded_eval_work(tmp_path, capsys, m
     assert json.loads(capsys.readouterr().out)["status"] == "awaiting_owner"
     gate, run = _gate(tmp_path)
     assert main(["evaluate", "--control", str(gate.root), "--run-id", run]) == 2
-    assert "choose an explicit trusted --executor" in capsys.readouterr().err
+    assert "choose an explicit --executor" in capsys.readouterr().err
