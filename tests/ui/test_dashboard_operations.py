@@ -250,3 +250,61 @@ def test_unexpected_owner_goal_does_not_become_an_accepted_release(tmp_path):
         assert inspection["release_approved"] is False
         assert inspection["gate"]["accepted_count"]==0
         assert not inspection["capabilities"]["run_execution"]
+
+
+
+def test_checkpoint_from_old_owner_revision_never_shown_as_current_release(tmp_path):
+    """A fixture-only accepted checkpoint must become stale after owner amendment."""
+    class FixtureTrusted(OfflineReviewedExecutor):
+        def probe(self, *, snapshot, scratch, control):
+            return {"backend":"test-double-only", "verified":True,
+                    "file_boundary_verified":True,
+                    "network_isolation_verified":True}
+    with browser_api(tmp_path) as (port,root):
+        create(port)
+        gate=gate_setup(tmp_path,root/"sample")
+        run=gate.prepare()
+        report=gate.evaluate(run,FixtureTrusted(),measure_only=False)
+        assert report["status"]=="pass"
+        gate.accept(run)
+        _,before=api(port,"/api/projects/sample/control")
+        assert before["gate"]["accepted_count"]==1
+        assert before["journey"][5]["state"]=="verified"
+        status,_=api(port,"/api/projects/sample/answers","POST",{
+            "expected_version":1,
+            "reason":"Owner changed a relevant requirement",
+            "answers":{"success":"A new and different outcome is now required"}
+        })
+        assert status==200
+        _,after=api(port,"/api/projects/sample/control")
+        assert after["gate"]["accepted_count"]==0
+        assert after["gate"]["checkpoints"][0]["integrity"]=="unverified"
+        assert after["journey"][5]["state"]=="reviewed"
+        assert after["journey"][6]["state"]=="blocked"
+        assert after["release_approved"] is False
+
+
+def test_same_task_id_in_unrelated_run_does_not_fake_progress(tmp_path):
+    from csef_gate.core import encoded
+    from csef_gate.project import ProjectBook
+    from csef_gate.ui.inspection import inspect
+    with browser_api(tmp_path) as (port,root):
+        create(port)
+        book=ProjectBook(root/"sample")
+        gate=gate_setup(tmp_path,root/"sample")
+        run=gate.prepare()
+        with book.connection() as con:
+            con.execute(
+                "INSERT INTO changes(proposal,status,created) VALUES(?,?,?)",
+                (encoded({"type":"factory_run","run_id":run,
+                          "graph_sha256":"unrelated-graph","owner_sha256":book.current()["sha256"]}).decode(),
+                 "recorded","2026-11-17T01:00:00Z"))
+            con.execute(
+                "INSERT INTO changes(proposal,status,created) VALUES(?,?,?)",
+                (encoded({"type":"factory_task","run_id":run,"task_id":"TASK-001"}).decode(),
+                 "factory_done","2026-11-17T01:00:01Z"))
+        plan={"state":"proposed","graph_sha256":"correct-graph",
+              "tasks":[{"id":"TASK-001"}]}
+        projection=inspect(book,plan)
+        assert projection["task_progress"]==[{
+            "id":"TASK-001","status":"proposed","independently_accepted":False}]
