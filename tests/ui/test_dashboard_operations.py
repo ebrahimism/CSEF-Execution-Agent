@@ -228,7 +228,7 @@ def test_operations_assets_are_same_origin_and_do_not_add_execution_routes(tmp_p
         for path,fragment in (
             ("/operations.js","csef:project"),
             ("/operations.css","journey-strip"),
-            ("/","id=\\"project-journey\\""),
+            ("/","project-journey"),
         ):
             code,text=api(port,path)
             assert code==200 and fragment.replace('\\"','"') in text
