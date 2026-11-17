@@ -149,6 +149,27 @@
     blockedAction:"Execution controls remain disabled until isolation is verified.",
     blockedStage:"Blocked",noProjectInspection:"Select a project to inspect its evidence."
   });
+
+  Object.assign(words.fa, {
+    gateControlled:"تحت کنترل Gate",selectRun:"انتخاب اجرا",
+    reviewInDocker:"بازبینی Docker",verifiedExport:"ساخت بستهٔ معتبر",
+    downloadVerified:"دریافت بسته",reviewExplanation:"فقط کد از قبل بررسی‌شده در Docker بدون شبکه و با منابع محدود اجرا می‌شود. نتیجه REVIEW باقی می‌ماند.",
+    reviewImage:"ایمیج ثابت Docker با SHA-256",reviewSourceConsent:"تأیید می‌کنم کد این اجرا را بررسی کرده‌ام.",
+    reviewOnlyConsent:"می‌پذیرم این بررسی مجوز PASS یا تحویل نیست.",
+    startReview:"شروع بازبینی",reviewRecorded:"بازبینی ثبت شد.",
+    confirmExport:"ساخت بسته فقط از checkpoint مستقل تأییدشده انجام می‌شود. ادامه می‌دهید؟",
+    exported:"بستهٔ تأییدشده ساخته شد."
+  });
+  Object.assign(words.en, {
+    gateControlled:"Gate-controlled",selectRun:"Select run",
+    reviewInDocker:"Docker review",verifiedExport:"Export verified package",
+    downloadVerified:"Download package",reviewExplanation:"Only pre-reviewed source runs inside network-disabled, resource-limited Docker. Results remain REVIEW.",
+    reviewImage:"Immutable Docker image with SHA-256",reviewSourceConsent:"I confirm I personally reviewed the source.",
+    reviewOnlyConsent:"I understand this cannot authorize PASS or release.",
+    startReview:"Start review",reviewRecorded:"Review evidence recorded.",
+    confirmExport:"Export requires an independently accepted Gate checkpoint. Continue?",
+    exported:"Verified package exported."
+  });
   const $ = id => document.getElementById(id);
   const state = {
     lang:localStorage.getItem("csef-lang") === "en" ? "en" : "fa",
@@ -343,6 +364,8 @@
     const calls=$("api-call-list"),recoveries=$("recovery-list");
     [runs,evaluations,calls,recoveries].forEach(el=>el.replaceChildren());
     if(!data){
+      $("run-select").replaceChildren(make("option","",tr("selectRun")));$("run-select").options[0].value="";
+      updateRunActions();
       $("run-count").textContent="—";
       $("evaluation-count").textContent="—";$("checkpoint-count").textContent="—";
       $("quota-display").textContent="—";$("delivery-state").textContent=tr("unknownPackage");
@@ -350,6 +373,14 @@
       return;
     }
     const gate=data.gate,recorded=gate.runs||[];
+    const selected=$("run-select"),prior=selected.value;
+    selected.replaceChildren(make("option","",tr("selectRun")));selected.options[0].value="";
+    recorded.forEach(run=>{
+      const opt=make("option","",run.id.slice(0,19)+"… · "+run.status);
+      opt.value=run.id;selected.append(opt);
+    });
+    selected.value=recorded.some(x=>x.id===prior)?prior:"";
+    updateRunActions();
     $("run-count").textContent=String(recorded.length);
     $("evaluation-count").textContent=String((gate.evaluations||[]).length);
     $("checkpoint-count").textContent=String(gate.accepted_checkpoint_count||0);
@@ -396,6 +427,46 @@
       "warning"
     )));
   }
+
+  function updateRunActions() {
+    const run=(state.inspection?.gate?.runs||[]).find(r=>r.id===$("run-select").value);
+    $("review-run").disabled=!run||run.status==="accepted"||state.busy;
+    $("export-run").disabled=!run||run.accepted_checkpoint!==true||state.busy;
+    const download=$("download-run");
+    if(download.dataset.runId!==($("run-select").value||"")){
+      download.hidden=true;download.removeAttribute("href");
+    }
+  }
+  async function runReviewed(event) {
+    event.preventDefault();
+    const runId=$("run-select").value;
+    if(!state.selected||!runId||state.busy)return;
+    const image=$("review-image").value.trim();
+    if(!$("review-source").checked||!$("review-only").checked)return;
+    state.busy=true;$("start-review").disabled=true;
+    try {
+      const result=await request("/api/projects/"+encodeURIComponent(state.selected)+
+        "/runs/"+encodeURIComponent(runId)+"/review","POST",{
+          image,confirm_reviewed_source:true,confirm_measure_only:true});
+      $("review-dialog").close();toast(tr("reviewRecorded")+" "+result.status);
+      await selectProject(state.selected,false);
+    }catch(err){toast(tr("errorPrefix")+err.message,true);}
+    finally {state.busy=false;$("start-review").disabled=false;updateRunActions();}
+  }
+  async function exportRun() {
+    const runId=$("run-select").value;
+    if(!state.selected||!runId||state.busy||!window.confirm(tr("confirmExport")))return;
+    state.busy=true;$("export-run").disabled=true;
+    try {
+      const result=await request("/api/projects/"+encodeURIComponent(state.selected)+
+        "/runs/"+encodeURIComponent(runId)+"/export","POST",{confirm_export:true});
+      toast(tr("exported")+" SHA-256: "+result.archive_sha256.slice(0,16)+"…");
+      await selectProject(state.selected,false);
+      const link=$("download-run");
+      link.hidden=false;link.href=result.download_url;link.dataset.runId=runId;
+    }catch(err){toast(tr("errorPrefix")+err.message,true);}
+    finally {state.busy=false;updateRunActions();}
+  }
   function busy(value) {
     state.busy=value;
     [$("new-project-form").querySelector("button"),$("generate-plan"),$("run-plan")].forEach(button=>{
@@ -439,6 +510,12 @@
     $("new-project-form").addEventListener("submit",create);
     $("project-filter").addEventListener("input",renderProjects);
     $("refresh-inspection").addEventListener("click",()=>{if(state.selected)selectProject(state.selected,false);else load();});
+    $("run-select").addEventListener("change",updateRunActions);
+    $("review-run").addEventListener("click",()=>{$("review-dialog").showModal();});
+    $("close-review").addEventListener("click",()=>$("review-dialog").close());
+    $("cancel-review").addEventListener("click",()=>$("review-dialog").close());
+    $("review-form").addEventListener("submit",runReviewed);
+    $("export-run").addEventListener("click",exportRun);
     $("project-select").addEventListener("change",event=>{
       if(event.target.value)selectProject(event.target.value,false);
       else{state.selected=null;state.current=null;state.inspection=null;renderProjects();renderGraph();renderOperations();$("generate-plan").disabled=true;}
