@@ -101,7 +101,7 @@ def main():
                             page.locator("#project-slug").fill("new-project")
                             page.locator("#brief").fill("A second project")
                             page.locator("#new-project-form button[type=submit]").click()
-                            page.locator("#stat-projects").get_by_text("2").wait_for(timeout=10000)
+                            page.wait_for_function("document.querySelector('#stat-projects').textContent.trim() === '2'", timeout=10000)
                             assert page.locator("#stat-projects").inner_text().strip() == "2"
                         context.close()
                 browser.close()
