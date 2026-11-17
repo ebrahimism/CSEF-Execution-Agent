@@ -10,7 +10,7 @@ import os
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 
-from ..core import Refused, encoded, now, plain
+from ..core import Refused, encoded, now, plain, parse_json
 from ..persistence.sqlite import DATABASE, connection
 
 STATES = ("provider_started", "provider_completed", "provider_unknown")
@@ -97,7 +97,7 @@ def estimate(provider: str, model: str, usage: dict) -> str | None:
         raw = path.read_bytes()
         if len(raw) > 100_000:
             raise Refused("provider pricing file too large")
-        card = json.loads(raw.decode("utf-8"))
+        card = parse_json(raw.decode("utf-8"))
     except (OSError, UnicodeError, ValueError, TypeError):
         raise Refused("invalid or missing provider pricing card") from None
     if (not isinstance(card, dict) or set(card) != {"version", "models"}
@@ -106,7 +106,9 @@ def estimate(provider: str, model: str, usage: dict) -> str | None:
         raise Refused("unsupported pricing card")
     rows = [x for x in card["models"] if isinstance(x, dict)
             and x.get("provider") == provider and x.get("model") == model]
-    if len(rows) != 1:
+    if len(rows) > 1:
+        raise Refused("duplicate provider/model pricing entries")
+    if not rows:
         return None
     item = rows[0]
     if set(item) != {"provider", "model", "input", "output", "cached_input", "cache_write"}:
@@ -145,3 +147,21 @@ def snapshot(control: Path) -> dict:
             "remaining_calls": None if _limit() is None else
                                max(0, _limit() - sum(totals.values())),
             "usd_hard_cap": None, "note": "This is a call-count limit, not a USD billing cap"}
+
+
+def main(argv=None) -> int:
+    """Read-only provider call accounting for an existing CSEF control store."""
+    import argparse
+    parser = argparse.ArgumentParser(description="CSEF provider request accounting")
+    parser.add_argument("--control", type=Path, required=True)
+    args = parser.parse_args(argv)
+    try:
+        print(encoded(snapshot(args.control)).decode("utf-8"), end="")
+        return 0
+    except (Refused, OSError, ValueError) as exc:
+        print(encoded({"status": "blocked", "error": str(exc)}).decode("utf-8"), end="")
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
