@@ -356,11 +356,12 @@ def build_plan(book: ProjectBook, plan_path: Path, project: Path, oracle: Path,
             or book.root in project.parents):
         raise Refused("source workspace and owner control must be disjoint")
     # The oracle originates from the owner, not from planner markdown/model output.
-    gate = Gate(book.root)
     if not (book.root / "spec.json").exists():
-        Gate.initialize(book.root, project, oracle, attach=True)
-    elif gate.spec()[1] != digest(oracle.read_bytes()):
-        raise Refused("oracle differs from the already frozen acceptance baseline")
+        gate = Gate.initialize(book.root, project, oracle, attach=True)
+    else:
+        gate = Gate(book.root)
+        if gate.spec()[1] != digest(oracle.read_bytes()):
+            raise Refused("oracle differs from the already frozen acceptance baseline")
     gate.spec()
     if resume_run_id is None:
         run_id = gate.prepare()
