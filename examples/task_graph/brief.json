@@ -1,0 +1,25 @@
+{
+  "answers": {
+    "users": "Owner and store staff",
+    "workflow": "Staff records an order, inventory decreases and persists",
+    "success": "Stock and orders work after fresh install, including a recovery check",
+    "constraints": "Keep dependencies and upfront spend minimal; SQLite permitted"
+  },
+  "facts": [
+    {
+      "id": "REQ-001",
+      "kind": "requirement",
+      "text": "Persist orders and update stock without negative quantities"
+    },
+    {
+      "id": "REQ-002",
+      "kind": "requirement",
+      "text": "Provide an operator-facing UI with input validation"
+    },
+    {
+      "id": "CON-001",
+      "kind": "constraint",
+      "text": "Use SQLite for local state, no required paid infrastructure"
+    }
+  ]
+}
