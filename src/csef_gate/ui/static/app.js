@@ -3,6 +3,18 @@
   "use strict";
   const words = {
     fa: {
+      execution: "اجرا و بازیابی", verification: "آزمون و Gate", delivery: "تحویل و شواهد",
+      controlPanelTitle: "مرکز کنترل پروژه", controlPanelSubtitle: "وضعیت اجرا، بازیابی، ارزیابی و تحویل براساس شواهد واقعی هسته.",
+      refresh: "به‌روزرسانی", evidenceRoadmap: "نقشهٔ واقعی مراحل پروژه", noFakeProgress: "بدون درصد ساختگی",
+      phaseDisclaimer: "هر مرحله فقط با شواهد معتبر پیش می‌رود؛ ایجاد تسک به معنی تأیید مستقل نیست.",
+      executionRecovery: "اجرا و بازیابی", testCenter: "آزمون و ارزیابی مستقل",
+      gateAuthorityReminder: "داشبورد نمی‌تواند PASS جعلی، تغییر معیارهای منجمد یا اجرای کد نامطمئن صادر کند.",
+      deliveryCenter: "تحویل و شواهد", gated: "وابسته به Gate",
+      deliveryDisclaimer: "تحویل و اثبات S7 پس از پذیرش مستقل و آزمون نصب واقعی اعتبار دارد.",
+      ownerDecisionsTitle: "نیازمندی‌ها و تصمیم‌های مالک", changeReason: "دلیل تغییر",
+      changeReasonHint: "چرا این پاسخ را تغییر می‌دهید؟",
+      saveOwnerAnswers: "ثبت نسخهٔ جدید پاسخ‌ها", auditProviders: "حسابرسی و مصرف API",
+      recentChanges: "آخرین رویدادها",
       workspace:"فضای کاری",overview:"نمای کلی",projects:"پروژه‌ها",taskGraph:"گراف وظایف",activity:"فعالیت‌ها",
       system:"سیستم",settings:"تنظیمات",localOnly:"محیط محلی و محدود",localNotice:"فقط روی همین دستگاه",
       personalSpace:"فضای شخصی",localConnected:"اتصال محلی",commandCenter:"COMMAND CENTER",
@@ -49,6 +61,18 @@
       showDetails:"جزئیات وظیفه"
     },
     en: {
+      execution: "Execution & Recovery", verification: "Tests & Gate", delivery: "Delivery & Evidence",
+      controlPanelTitle: "Project control center", controlPanelSubtitle: "Evidence-based execution, recovery, verification and delivery.",
+      refresh: "Refresh", evidenceRoadmap: "Evidence-based project journey", noFakeProgress: "No invented progress",
+      phaseDisclaimer: "A stage advances only with evidence; proposed code is not independent acceptance.",
+      executionRecovery: "Execution & recovery", testCenter: "Independent verification & tests",
+      gateAuthorityReminder: "The dashboard cannot grant fake PASS, change frozen tests or run untrusted code.",
+      deliveryCenter: "Delivery & evidence", gated: "Gate controlled",
+      deliveryDisclaimer: "Delivery and S7 verification require independent acceptance and real install QA.",
+      ownerDecisionsTitle: "Owner requirements & decisions", changeReason: "Change reason",
+      changeReasonHint: "Why are you updating this answer?",
+      saveOwnerAnswers: "Save new owner revision", auditProviders: "Audit & API usage",
+      recentChanges: "Recent events",
       workspace:"Workspace",overview:"Overview",projects:"Projects",taskGraph:"Task Graph",activity:"Activity",
       system:"System",settings:"Settings",localOnly:"Local, limited access",localNotice:"This device only",
       personalSpace:"Personal workspace",localConnected:"Local connection",commandCenter:"COMMAND CENTER",
