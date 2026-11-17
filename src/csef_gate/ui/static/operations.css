@@ -61,3 +61,12 @@
 @media (max-width:1200px){.ops-grid{gap:12px}.ops-grid:not(.lower-ops){grid-template-columns:repeat(2,minmax(0,1fr))}.ops-grid:not(.lower-ops)>.operation-panel:last-child{grid-column:span 2}}
 @media (max-width:980px){.journey-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.ops-grid,.ops-grid:not(.lower-ops),.lower-ops{grid-template-columns:1fr 1fr}.ops-grid:not(.lower-ops)>.operation-panel:last-child{grid-column:span 2}.lower-ops>.operation-panel{grid-column:span 2}}
 @media (max-width:650px){.ops-intro{align-items:flex-start;flex-direction:column}.ops-intro-actions{justify-content:space-between;width:100%}.ops-grid,.ops-grid:not(.lower-ops),.lower-ops{grid-template-columns:1fr}.ops-grid:not(.lower-ops)>.operation-panel:last-child,.lower-ops>.operation-panel{grid-column:auto}.owner-fields{grid-template-columns:1fr}.journey-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.journey-step{min-height:98px;padding:11px}.journey-step-title{font-size:11px}.ops-intro h2{font-size:21px}.budget-tiles{gap:5px}.budget-tile{padding:9px 6px}.budget-tile strong{font-size:17px}}
+
+/* Real Chromium mobile QA: prevent min-content from widening a 1fr parent.
+   The DAG remains horizontally scrollable inside its own viewport. */
+@media (max-width:1020px) {
+  .section-grid,.lower-grid {grid-template-columns:minmax(0,1fr)}
+  .projects-panel,.roadmap-panel,.graph-panel,.insights-panel,
+  .projects-list,.project-row,.graph-viewport {min-width:0;max-width:100%}
+  .project-row {width:100%}
+}
