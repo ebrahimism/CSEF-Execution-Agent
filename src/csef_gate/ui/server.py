@@ -32,11 +32,11 @@ ASSETS = {
 ROADMAP = (
     ("S0", "baseline", "partial"),
     ("S1", "planning", "partial"),
+    ("S6a", "interface", "partial"),
     ("S2", "providers", "partial"),
     ("S3", "execution", "partial"),
-    ("S4", "verification", "partial"),
-    ("S5", "delivery", "partial"),
-    ("S6a", "interface", "prototype"),
+    ("S4", "verification", "blocked"),
+    ("S5", "delivery", "blocked"),
     ("S7", "validation", "not_verified"),
 )
 
