@@ -20,10 +20,10 @@ from csef_gate.ui.server import DashboardService, make_handler
 
 
 @contextmanager
-def browser_api(tmp_path):
+def browser_api(tmp_path, reviewed_executor=None):
     workspace=tmp_path/"workspace"
     workspace.mkdir()
-    service=DashboardService(workspace)
+    service=DashboardService(workspace, reviewed_executor=reviewed_executor)
     server=ThreadingHTTPServer(("127.0.0.1",0),make_handler(service,"known-private-test-csrf"))
     thread=threading.Thread(target=server.serve_forever,daemon=True)
     thread.start()
@@ -47,6 +47,8 @@ def api(port,path,method="GET",payload=None,headers=None):
     req=Request(origin+path,headers=h,data=body,method=method)
     try:
         with urlopen(req,timeout=8) as response:
+            if response.headers.get("Content-Type", "").startswith("application/zip"):
+                return response.status,response.read()
             if path.endswith((".js",".css")) or path=="/":
                 return response.status,response.read().decode("utf-8")
             return response.status,json.loads(response.read())
@@ -308,3 +310,97 @@ def test_same_task_id_in_unrelated_run_does_not_fake_progress(tmp_path):
         projection=inspect(book,plan)
         assert projection["task_progress"]==[{
             "id":"TASK-001","status":"proposed","independently_accepted":False}]
+
+
+
+def test_reviewed_only_gate_action_requires_owner_confirmation_and_cannot_pass(tmp_path):
+    with browser_api(tmp_path, reviewed_executor=lambda image: OfflineReviewedExecutor()) as (port,root):
+        create(port)
+        gate=gate_setup(tmp_path,root/"sample")
+        run=gate.prepare()
+        image="python:3.11-slim@sha256:"+"a"*64
+        for payload in [
+            {"run_id":run,"image":image,"confirm_reviewed_source":False,"measure_only":True},
+            {"run_id":run,"image":image,"confirm_reviewed_source":True,"measure_only":False},
+            {"run_id":run,"image":"python:latest","confirm_reviewed_source":True,"measure_only":True},
+        ]:
+            status,out=api(port,"/api/projects/sample/review","POST",payload)
+            assert status==400
+        status,data=api(port,"/api/projects/sample/review","POST",{
+            "run_id":run,"image":image,"confirm_reviewed_source":True,"measure_only":True
+        })
+        assert status==200 and data["status"]=="review"
+        assert data["measurement_only"] is True
+        assert data["release_approved"] is False
+        assert data["delivery_created"] is False
+        assert data["cases_passed"]==1
+        _,view=api(port,"/api/projects/sample/control")
+        assert view["gate"]["accepted_count"]==0
+        assert view["gate"]["evaluations"][0]["status"]=="review"
+        assert view["capabilities"]["reviewed_measurement"] is True
+        assert view["capabilities"]["run_execution"] is False
+        assert view["capabilities"]["delivery_export"] is False
+
+
+def test_export_gate_checkpoint_only_with_sha256_download_and_revocation(tmp_path):
+    from io import BytesIO
+    from zipfile import ZipFile
+    class FixtureTrusted(OfflineReviewedExecutor):
+        def probe(self, *, snapshot, scratch, control):
+            return {"backend":"fixture-not-production", "verified":True,
+                    "file_boundary_verified":True,"network_isolation_verified":True}
+    with browser_api(tmp_path) as (port,root):
+        create(port)
+        gate=gate_setup(tmp_path,root/"sample")
+        run=gate.prepare()
+        denied={"run_id":run,"confirm_export":True}
+        status,err=api(port,"/api/projects/sample/export","POST",denied)
+        assert status==400
+        assert not (root/"sample"/"exports").exists()
+        gate.evaluate(run,FixtureTrusted(),measure_only=False)
+        gate.accept(run)
+        status,err=api(port,"/api/projects/sample/export","POST",{
+            "run_id":run,"confirm_export":False})
+        assert status==400
+        status,response=api(port,"/api/projects/sample/export","POST",denied)
+        assert status==200 and response["status"]=="delivered"
+        assert response["release_approved"] is False
+        assert response["deployment_approved"] is False
+        assert response["download"].endswith("/archives/"+run)
+        status,content=api(port,response["download"])
+        assert status==200
+        with ZipFile(BytesIO(content)) as archive:
+            assert "source/app.py" in archive.namelist()
+            assert "manifest.json" in archive.namelist()
+        status,err=api(port,"/api/projects/sample/export","POST",denied)
+        assert status==400, "second export must not overwrite previous archive"
+        saved=root/"sample"/"exports"/(run+".zip")
+        saved.write_bytes(b"tampered")
+        status,err=api(port,response["download"])
+        assert status==400
+        assert "integrity" in err["error"]
+
+
+def test_owner_revision_blocks_export_of_old_checkpoint(tmp_path):
+    class FixtureTrusted(OfflineReviewedExecutor):
+        def probe(self, *, snapshot, scratch, control):
+            return {"backend":"fixture-not-production", "verified":True,
+                    "file_boundary_verified":True, "network_isolation_verified":True}
+    with browser_api(tmp_path) as (port,root):
+        create(port)
+        gate=gate_setup(tmp_path,root/"sample")
+        run=gate.prepare()
+        gate.evaluate(run,FixtureTrusted(),measure_only=False)
+        gate.accept(run)
+        status,result=api(port,"/api/projects/sample/export","POST",{
+            "run_id":run,"confirm_export":True})
+        assert status==200
+        api(port,"/api/projects/sample/answers","POST",{
+            "expected_version":1,"reason":"Updated success criterion",
+            "answers":{"success":"New acceptance criteria required"}
+        })
+        status,err=api(port,result["download"])
+        assert status==400
+        status,err=api(port,"/api/projects/sample/export","POST",{
+            "run_id":run,"confirm_export":True})
+        assert status==400
