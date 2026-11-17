@@ -174,8 +174,9 @@ class DashboardService:
         if payload["provider"] not in ("openai", "anthropic"):
             raise Refused("supported provider must be explicitly selected")
         model = payload["model"]
-        if not isinstance(model, str) or not 1 <= len(model) <= 100 or not re.fullmatch(
-                r"[a-zA-Z0-9_.:/-]+", model):
+        if (not isinstance(model, str) or not 1 <= len(model) <= 100
+                or not re.fullmatch(r"[a-zA-Z0-9_.:/-]+", model)
+                or ".." in model or model.startswith(("/", ".")) or "//" in model):
             raise Refused("invalid explicit model name")
         if self.planner is None:
             from ..providers.direct import select_provider
