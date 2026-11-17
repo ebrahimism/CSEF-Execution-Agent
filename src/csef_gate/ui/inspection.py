@@ -95,15 +95,15 @@ def _gate_state(book, con):
         spec_sha = None
 
     run_rows = [dict(row) for row in con.execute(
-        "SELECT id,status,attempts,created FROM runs ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))]
+        "SELECT id,status,attempts,created FROM runs ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))
     attempted = [dict(row) for row in con.execute(
-        "SELECT id,run_id,status,created FROM attempts ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))]
+        "SELECT id,run_id,status,created FROM attempts ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))
     evaluated = [dict(row) for row in con.execute(
         "SELECT id,run_id,status,report,report_hash,source_hash,spec_hash,created "
-        "FROM evaluations ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))]
+        "FROM evaluations ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))
     checkpoints = [dict(row) for row in con.execute(
         "SELECT id,run_id,evaluation_id,source_hash,spec_hash,report_hash,created "
-        "FROM checkpoints ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))]
+        "FROM checkpoints ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))
     gate = Gate(book.root)
     evals = []
     by_eval = {}
@@ -259,7 +259,7 @@ def inspect(book, plan=None):
             {"version": row["version"], "sha256": row["sha256"],
              "reason": row["reason"], "created": row["created"]}
             for row in con.execute("SELECT version,sha256,reason,created FROM revisions "
-                                   "ORDER BY version DESC LIMIT ?", (MAX_ENTRIES,))]
+                                   "ORDER BY version DESC LIMIT ?", (MAX_ENTRIES,))
         ]
         stages = [dict(r) for r in con.execute(
             "SELECT position,name,status,version FROM stages ORDER BY position")]
@@ -267,7 +267,7 @@ def inspect(book, plan=None):
             {"id": row["id"], "role": row["role"], "status": row["status"],
              "has_receipt": bool(row["receipt"])}
             for row in con.execute("SELECT id,role,status,receipt FROM calls "
-                                   "ORDER BY id DESC LIMIT ?", (MAX_ENTRIES,))]
+                                   "ORDER BY id DESC LIMIT ?", (MAX_ENTRIES,))
         ]
         events = _events(book, con)
         gate = _gate_state(book, con)
