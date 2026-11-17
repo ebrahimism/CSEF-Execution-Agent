@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>CSEF — Execution Studio</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
+    <symbol id="i-layer" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/></symbol>
+    <symbol id="i-nodes" viewBox="0 0 24 24"><rect x="2" y="2" width="8" height="7" rx="2"/><rect x="14" y="15" width="8" height="7" rx="2"/><path d="M6 9v5a4 4 0 0 0 4 4h4M14 6h7M18 3v6"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 2 2.6 7.4L22 12l-7.4 2.6L12 22l-2.6-7.4L2 12l7.4-2.6L12 2Z"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24"><path d="M2 12h5l3-8 4 16 3-8h5"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9l2.2 2.2m9.8 9.8 2.2 2.2m0-14.2-2.2 2.2m-9.8 9.8-2.2 2.2"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-7-7 7 7-7 7"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.4 8.1 8 10 4.6-1.9 8-5 8-10V6l-8-4Z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-17-4 22"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M5 2h9l5 5v15H5z"/><path d="M14 2v5h5M8 12h8M8 16h8"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Workspace navigation">
+      <div class="brand">
+        <div class="brand-mark"><span class="brand-orbit"></span><span class="brand-core"></span></div>
+        <div class="brand-copy"><strong>CSEF<span class="brand-period">.</span></strong><small>EXECUTION STUDIO</small></div>
+      </div>
+      <div class="sidebar-divider"></div>
+      <p class="menu-caption" data-i18n="workspace">فضای کاری</p>
+      <nav class="primary-nav" aria-label="Main">
+        <button type="button" class="nav-link selected" data-target="overview"><svg><use href="#i-grid"/></svg><span data-i18n="overview">نمای کلی</span></button>
+        <button type="button" class="nav-link" data-target="projects"><svg><use href="#i-layer"/></svg><span data-i18n="projects">پروژه‌ها</span><span class="nav-count" id="nav-projects">0</span></button>
+        <button type="button" class="nav-link" data-target="graph"><svg><use href="#i-nodes"/></svg><span data-i18n="taskGraph">گراف وظایف</span></button>
+        <button type="button" class="nav-link" data-target="activity"><svg><use href="#i-activity"/></svg><span data-i18n="activity">فعالیت‌ها</span></button>
+      </nav>
+      <p class="menu-caption second-menu" data-i18n="system">سیستم</p>
+      <nav class="primary-nav" aria-label="System">
+        <button type="button" class="nav-link" data-target="settings"><svg><use href="#i-settings"/></svg><span data-i18n="settings">تنظیمات</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="secure-card"><div class="secure-icon"><svg><use href="#i-shield"/></svg></div>
+          <div><strong data-i18n="localOnly">محیط محلی و امن</strong><p data-i18n="localNotice">دسترسی فقط از دستگاه شما</p></div>
+          <span class="secure-dot"></span>
+        </div>
+        <div class="sidebar-footer"><span class="avatar">C</span><div><strong data-i18n="personalSpace">فضای شخصی</strong><small>v0.3 · S6a</small></div><span class="sidebar-more">•••</span></div>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <div class="breadcrumb"><span data-i18n="workspace">فضای کاری</span><svg><use href="#i-chevron"/></svg><strong data-i18n="overview">نمای کلی</strong></div>
+        <div class="topbar-actions">
+          <span class="connection"><span class="connection-dot"></span><span data-i18n="localConnected">اتصال محلی</span></span>
+          <button type="button" id="language-toggle" class="language-switch" aria-label="Change language"><span id="language-label">EN</span><span class="language-divider"></span><span class="language-globe">◎</span></button>
+          <span class="top-avatar">C</span>
+        </div>
+      </header>
+
+      <main class="content" id="overview">
+        <div class="page-heading">
+          <div><div class="overline"><span class="overline-line"></span><span data-i18n="commandCenter">COMMAND CENTER</span></div>
+            <h1 data-i18n="welcome">فضای ساخت نرم‌افزار شما</h1>
+            <p data-i18n="welcomeSubtitle">از یک ایدهٔ ساده تا اجرای کنترل‌شده؛ همه‌چیز در یک نمای واحد.</p>
+          </div>
+          <span class="date-pill" id="today-label">—</span>
+        </div>
+
+        <section class="hero" aria-labelledby="hero-title">
+          <div class="hero-ambient hero-ambient-one"></div><div class="hero-ambient hero-ambient-two"></div>
+          <div class="hero-content">
+            <div class="hero-kicker"><span class="kicker-icon">✧</span><span data-i18n="ideaToSoftware">IDEA → SOFTWARE</span></div>
+            <h2 id="hero-title" data-i18n="heroTitle">ایده‌ات را بنویس.<br>بقیهٔ مسیر را ببین.</h2>
+            <p data-i18n="heroSubtitle">یک شرح کوتاه از نرم‌افزاری که می‌خواهید بسازید کافی است تا برنامه‌ریزی را آغاز کنید.</p>
+            <form id="new-project-form" class="brief-form">
+              <label for="brief" class="sr-only" data-i18n="briefLabel">شرح پروژه</label>
+              <textarea id="brief" name="brief" required maxlength="20000" rows="2" data-placeholder="briefPlaceholder" placeholder="مثلاً: یک نرم‌افزار مدیریت موجودی با گزارش‌های ساده..." ></textarea>
+              <div class="brief-footer">
+                <div class="slug-wrap"><span data-i18n="projectId">شناسهٔ پروژه</span><input id="project-slug" name="slug" required pattern="[a-z0-9][a-z0-9-]*" maxlength="48" placeholder="my-first-app" autocomplete="off" dir="ltr"></div>
+                <button class="primary-button" type="submit"><svg><use href="#i-plus"/></svg><span data-i18n="createProject">ایجاد پروژه</span></button>
+              </div>
+            </form>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><div class="orbit orbit-c"></div>
+            <div class="art-tile art-tile-a">01<span>SPEC</span></div>
+            <div class="art-tile art-tile-b">02<span>PLAN</span></div>
+            <div class="art-tile art-tile-c">03<span>BUILD</span></div>
+            <div class="art-center">C<span>●</span></div>
+          </div>
+        </section>
+
+        <section class="stats-grid" aria-label="Workspace metrics">
+          <article class="stat-card"><div class="stat-top"><span data-i18n="allProjects">کل پروژه‌ها</span><div class="stat-icon indigo"><svg><use href="#i-layer"/></svg></div></div><div class="stat-value" id="stat-projects">—</div><div class="stat-foot" data-i18n="trackedWorkspaces">فضاهای کاری ثبت‌شده</div></article>
+          <article class="stat-card"><div class="stat-top"><span data-i18n="plannedTasks">وظایف پیشنهادی</span><div class="stat-icon cyan"><svg><use href="#i-nodes"/></svg></div></div><div class="stat-value" id="stat-tasks">—</div><div class="stat-foot" data-i18n="notAccepted">هنوز به معنای تأیید نیست</div></article>
+          <article class="stat-card"><div class="stat-top"><span data-i18n="awaitingInput">نیازمند پاسخ</span><div class="stat-icon amber"><svg><use href="#i-activity"/></svg></div></div><div class="stat-value" id="stat-blocked">—</div><div class="stat-foot" data-i18n="ownerDecisions">تصمیم‌های باز مالک</div></article>
+          <article class="stat-card"><div class="stat-top"><span data-i18n="verifiedReleases">تحویل‌های تأییدشده</span><div class="stat-icon emerald"><svg><use href="#i-shield"/></svg></div></div><div class="stat-value unknown">—</div><div class="stat-foot" data-i18n="notMeasured">هنوز اندازه‌گیری نشده</div></article>
+        </section>
+
+        <div class="section-grid">
+          <section id="projects" class="panel projects-panel">
+            <div class="panel-header"><div><p class="section-overline" data-i18n="yourWorkspace">YOUR WORKSPACE</p><h3 data-i18n="recentProjects">پروژه‌های شما</h3></div>
+              <div class="filter-box"><svg><use href="#i-search"/></svg><input id="project-filter" type="search" data-placeholder="searchProjects" placeholder="جست‌وجو..." aria-label="Search projects"></div>
+            </div>
+            <div id="projects-list" class="projects-list" aria-live="polite"></div>
+          </section>
+
+          <section id="activity" class="panel roadmap-panel">
+            <div class="panel-header"><div><p class="section-overline" data-i18n="executionPath">EXECUTION PATH</p><h3 data-i18n="roadmap">مراحل توسعه</h3></div><span class="small-counter">S0—S7</span></div>
+            <div id="roadmap-list" class="roadmap-list"></div>
+            <p class="panel-note" data-i18n="roadmapDisclaimer">وضعیت‌ها برآورد محافظه‌کارانه‌اند، نه مجوز انتشار.</p>
+          </section>
+        </div>
+
+        <div class="lower-grid">
+          <section id="graph" class="panel graph-panel">
+            <div class="panel-header graph-header">
+              <div><p class="section-overline" data-i18n="workflowIntelligence">WORKFLOW INTELLIGENCE</p><h3 data-i18n="dependencyGraph">گراف وابستگی وظایف</h3></div>
+              <div class="graph-legend"><span><i class="legend-dot proposal-dot"></i><span data-i18n="proposed">پیشنهاد</span></span><span><i class="legend-dot ready-dot"></i><span data-i18n="ready">بدون وابستگی</span></span></div>
+            </div>
+            <div class="graph-toolbar">
+              <label for="project-select" data-i18n="selectedProject">پروژهٔ انتخاب‌شده</label>
+              <select id="project-select"><option value="" data-i18n="chooseProject">انتخاب پروژه</option></select>
+              <button type="button" class="outline-button" id="generate-plan"><svg><use href="#i-spark"/></svg><span data-i18n="generatePlan">تولید طرح با AI</span></button>
+            </div>
+            <div class="graph-viewport" id="graph-viewport">
+              <svg class="graph-edges" id="graph-edges" aria-hidden="true"></svg>
+              <div id="graph-nodes" class="graph-nodes"><div class="graph-empty"><div class="empty-orbit"><svg><use href="#i-nodes"/></svg></div><p data-i18n="graphEmpty">پروژه‌ای انتخاب کنید تا وظایف آن نمایش داده شوند.</p></div></div>
+            </div>
+            <div class="graph-bottom"><span data-i18n="graphNote">این گراف فقط پیشنهاد را نمایش می‌دهد؛ پذیرش نیازمند Gate مستقل است.</span><span id="graph-task-count">—</span></div>
+          </section>
+
+          <section id="settings" class="panel insights-panel">
+            <div class="panel-header"><div><p class="section-overline" data-i18n="systemHealth">SYSTEM STATUS</p><h3 data-i18n="modelConnections">اتصال مدل‌ها</h3></div><span class="status-ring"></span></div>
+            <div class="provider-row"><div class="provider-logo openai">O</div><div class="provider-name"><strong>OpenAI</strong><small>Responses API</small></div><span class="provider-state" id="openai-state">—</span></div>
+            <div class="provider-row"><div class="provider-logo anthropic">A</div><div class="provider-name"><strong>Anthropic</strong><small>Messages API</small></div><span class="provider-state" id="anthropic-state">—</span></div>
+            <div class="insight-rule"></div>
+            <div class="security-banner"><svg><use href="#i-shield"/></svg><div><strong data-i18n="gateEnforced">Gate مستقل فعال در هسته</strong><p data-i18n="gateExplanation">این داشبورد مجوز PASS، اجرای ناامن یا استقرار صادر نمی‌کند.</p></div></div>
+            <div class="insight-footer"><span data-i18n="uiMode">حالت رابط</span><strong>S6a · Local</strong></div>
+          </section>
+        </div>
+        <footer class="page-footer"><span>© CSEF Execution Studio</span><span data-i18n="privacyFoot">Private by design · Local only</span></footer>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="plan-dialog" class="modal">
+    <form method="dialog" class="modal-inner" id="plan-form">
+      <div class="modal-top"><div class="modal-icon"><svg><use href="#i-spark"/></svg></div><button type="button" id="close-plan" class="modal-close" aria-label="Close">×</button></div>
+      <h2 data-i18n="generatePlan">تولید طرح با AI</h2>
+      <p data-i18n="planDialogExplain">مدل یک طرح پیشنهادی می‌سازد؛ هیچ کدی اجرا یا منتشر نمی‌شود. این فراخوانی ممکن است هزینهٔ API داشته باشد.</p>
+      <label for="provider" data-i18n="provider">ارائه‌دهنده</label>
+      <select id="provider" required><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option></select>
+      <label for="model" data-i18n="model">شناسهٔ مدل</label>
+      <input id="model" required maxlength="100" dir="ltr" placeholder="e.g. gpt-5.5">
+      <label class="consent"><input id="confirm-spend" type="checkbox" required><span data-i18n="consent">هزینهٔ احتمالی یک درخواست API را تأیید می‌کنم.</span></label>
+      <div class="modal-actions"><button type="button" class="outline-button" id="cancel-plan" data-i18n="cancel">انصراف</button><button type="submit" class="primary-button" id="run-plan" data-i18n="runPlanner">تولید طرح</button></div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
