@@ -261,3 +261,27 @@ def test_existing_workspace_never_overwritten_by_bootstrap(tmp_path):
     with pytest.raises(Refused, match="existing"):
         bootstrap_sources(project, spec)
     assert (project / "owner-data.txt").read_text() == "keep me"
+
+
+def test_plan_file_tampering_cannot_erase_open_questions(tmp_path):
+    book, plan = prepared(tmp_path, questions=["Which user role can read records?"])
+    path = Path(plan["plan_path"])
+    original = json.loads(path.read_text(encoding="utf-8"))
+    original["questions"] = []
+    path.write_bytes(encoded(original))
+    spec = oracle(tmp_path)
+    project = tmp_path / "candidate"
+    bootstrap_sources(project, spec)
+    with pytest.raises(Refused, match="factory plan changed"):
+        build_plan(book, path, project, spec, ScriptedCoder(),
+                   FixtureGuest(), tmp_path / "none.zip", owner_approved=True)
+    assert not (book.root / "spec.json").exists()
+    assert not (tmp_path / "none.zip").exists()
+
+
+def test_plan_artifact_edit_invalidates_spec_kit_binding(tmp_path):
+    book, plan = prepared(tmp_path)
+    bundle = Path(plan["spec_kit_bundle"])
+    (bundle / "tasks.md").write_text("changed task claim\n", encoding="utf-8")
+    with pytest.raises(Refused, match="Spec Kit bundle differs"):
+        _read_plan(book, Path(plan["plan_path"]))
