@@ -78,8 +78,9 @@ def _report(book, row, expected_spec_hash):
 def _gate_state(book, con):
     config = con.execute("SELECT spec_hash,baseline_hash FROM config LIMIT 1").fetchone()
     if config is None:
-        return {"state": "not_configured", "tests": [],
-                "runs": [], "checkpoints": [], "evaluations": [], "integrity": "not_applicable"}
+        return {"state": "not_configured", "tests": [], "max_attempts": None,
+                "runs": [], "attempts": [], "checkpoints": [], "evaluations": [],
+                "accepted_count": 0, "integrity": "not_applicable"}
     try:
         spec, spec_sha = Gate(book.root).spec()
         if config["spec_hash"] != spec_sha:
