@@ -7,8 +7,12 @@ dependencies = ["pydantic>=2.7", "jsonschema>=4.21"]
 
 [project.scripts]
 csef-gate = "csef_gate.__main__:main"
+csef-dashboard = "csef_gate.ui.server:main"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.setuptools.package-data]
+"csef_gate.ui" = ["static/*.html", "static/*.css", "static/*.js"]
