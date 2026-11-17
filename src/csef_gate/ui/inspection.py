@@ -308,8 +308,10 @@ def inspect(book, plan=None):
         "capabilities": {
             "planning": True, "owner_amendment": True,
             "gate_read_only": True, "run_execution": False,
+            "reviewed_measurement": gate["state"] == "configured",
             "unsafe_host_execution": False, "automatic_resume": False,
-            "delivery_export": False, "live_api_verified": False,
+            "delivery_export": bool(gate["accepted_count"]),
+            "live_api_verified": False,
         },
         "release_approved": False,
     }
