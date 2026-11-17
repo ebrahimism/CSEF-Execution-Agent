@@ -287,3 +287,47 @@ html[dir=ltr] .nav-link.selected:before{inset-inline-start:17px}
 @media(prefers-reduced-motion:reduce){
   *,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 }
+
+/* S0–S7: responsive evidence-first operations center */
+.operations-area{margin-top:29px}
+.operations-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:17px}
+.operations-intro h2{font-weight:800;font-size:20px;letter-spacing:-.3px;margin:0 0 3px}
+.operations-intro p:not(.section-overline){font-size:11px;color:var(--muted);margin:0}
+.operations-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px}
+.ops-panel{scroll-margin-top:100px;display:flex;flex-direction:column;min-height:365px}
+.ops-panel .panel-header{margin-bottom:18px}
+.operations-counter,.soft-chip{display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:4px 9px;border-radius:8px;border:1px solid #6e7daa36;background:#172640;color:#aebaf0;font-size:10px;font-weight:700;white-space:nowrap}
+.run-controls,.ops-detail-heading{display:flex;align-items:center;justify-content:space-between;gap:7px;color:#8292ae;font-size:10px;margin-bottom:12px}
+.ops-detail-heading h4{font-size:11px;color:#cbd6f1;margin:0}
+.ops-divider{height:1px;background:var(--border);margin:17px 0}
+.ops-events{display:grid;gap:8px;align-content:start;max-height:245px;overflow:auto;scrollbar-color:#4f607d transparent;scrollbar-width:thin}
+.evidence-row{display:flex;gap:11px;align-items:start;padding:11px;background:#162239a8;border:1px solid #35435c55;border-radius:10px;min-width:0}
+.evidence-dot{width:8px;height:8px;margin-top:6px;flex-shrink:0;background:#8395d9;border-radius:50%;box-shadow:0 0 0 4px #8095e417}
+.evidence-row.warning .evidence-dot{background:#e8b56f;box-shadow:0 0 0 4px #e8b56f18}
+.evidence-row.passed .evidence-dot{background:#4ed1b2;box-shadow:0 0 0 4px #4ed1b218}
+.evidence-body{display:flex;flex-direction:column;gap:2px;min-width:0}
+.evidence-body strong{font-size:10px;font-weight:720;color:#dde6ff;overflow-wrap:anywhere;direction:ltr;text-align:start}
+.evidence-body small{font-size:9px;color:#8194b3;overflow-wrap:anywhere;line-height:1.7}
+.evidence-empty{font-size:11px;color:#8a9bb6;border:1px dashed #495c7a60;border-radius:11px;padding:22px 13px;text-align:center;margin:0}
+.ops-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:15px}
+.ops-metrics>div{background:#17233b;border:1px solid #43527650;border-radius:10px;min-height:83px;padding:12px;display:flex;flex-direction:column;justify-content:space-between}
+.ops-metrics span{font-size:10px;color:#8c9bb4}
+.ops-metrics strong{font-size:25px;line-height:1;color:#e3eafa;font-variant-numeric:tabular-nums}
+.ops-caution{margin-top:auto;padding:13px;display:flex;gap:10px;align-items:flex-start;color:#b4b8db;font-size:10px;line-height:1.8;border-radius:10px;background:#2327487c;border:1px solid #6168a53d}
+.ops-caution svg{width:18px;height:18px;flex-shrink:0;color:#a5abf2}
+.delivery-feature{display:flex;align-items:center;gap:14px;padding:16px;background:linear-gradient(120deg,#172f40,#1c2342);border:1px solid #4e628366;border-radius:12px}
+.delivery-icon{width:43px;height:43px;border-radius:11px;background:#6b8dea20;display:grid;place-items:center;flex-shrink:0;color:#a8bfff}
+.delivery-feature strong{font-size:11px;color:#e1eafa}
+.delivery-feature p{font-size:10px;color:#a2b2ce;margin:5px 0 0}
+@media(max-width:1410px){.operations-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.operations-grid>:last-child{grid-column:1/-1}}
+@media(max-width:960px){.operations-grid{grid-template-columns:1fr}.operations-grid>:last-child{grid-column:auto}.ops-panel{min-height:0}}
+@media(max-width:620px){.operations-intro{align-items:start;flex-direction:column}.operations-intro h2{font-size:18px}.operations-grid{gap:12px}.ops-panel{padding:17px}}
+
+
+.ops-actions{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-bottom:14px}
+.ops-actions select{min-width:0;flex:1 1 150px;max-width:100%;padding:8px 10px;background:#131f36;color:#dce5fc;border:1px solid #3c4965;border-radius:8px;font-size:10px}
+.ops-actions .outline-button{min-height:35px;font-size:10px}
+.ops-actions [hidden]{display:none!important}
+.ops-actions a.outline-button{text-decoration:none}
+.roadmap-state.blocked{color:#f0c38e;background:#a674301b;border-color:#a6743040}
+@media(max-width:620px){.ops-actions{align-items:stretch}.ops-actions select{flex-basis:100%}.ops-actions .outline-button{flex:1}}

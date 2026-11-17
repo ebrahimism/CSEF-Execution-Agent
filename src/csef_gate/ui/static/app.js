@@ -95,6 +95,81 @@
       showDetails:"Task details"
     }
   };
+  Object.assign(words.fa, {
+    executionCenter:"مانیتور اجرا",verificationCenter:"ارزیابی و Gate",
+    deliveryCenter:"تحویل و بازیابی",operationalWorkspace:"مرکز عملیاتی پروژه",
+    operationalSubtitle:"وضعیت مستقیم از هستهٔ CSEF و شواهد موجود؛ نه پیشرفت فرضی.",
+    refreshEvidence:"به‌روزرسانی شواهد",runVisibility:"اجراهای ثبت‌شده در SQLite",
+    readOnly:"فقط‌خواندنی",providerUsage:"مصرف API و فراخوانی‌ها",
+    gateAuthority:"اختیار مستقل",recordedEvaluations:"ارزیابی‌های ثبت‌شده",
+    acceptedCheckpoints:"Checkpoint معتبر",
+    verificationCaution:"Docker در حالت REVIEW اجازهٔ PASS یا تحویل خودکار نمی‌دهد.",
+    evidenceFirst:"مبتنی بر شواهد",packageStatus:"بستهٔ قابل تحویل",
+    unknownPackage:"رسید بستهٔ نهایی در پایگاه کنترل ثبت نشده است.",
+    recoveryStatus:"وضعیت ادامهٔ اجرا",
+    recoveryCaution:"اجرای مجدد نامعلوم بدون تطبیق شواهد مجاز نیست؛ فعال‌سازی کنترل‌ها به S3/S4 وابسته است.",
+    noRuns:"هیچ اجرای ثبت‌شده‌ای برای این پروژه وجود ندارد.",
+    noEvidence:"هنوز شواهد آزمون ثبت نشده است.",
+    noCalls:"هنوز درخواست مدلی ثبت نشده است.",
+    noRecovery:"هیچ اجرای نیازمند بازیابی وجود ندارد.",
+    selectedRun:"اجرای انتخاب‌شده",gatePassed:"قبولی معتبر Gate",
+    reviewOnly:"بازبینی",notVerifiedRun:"در انتظار شاهد معتبر",
+    unknownOutcome:"نتیجهٔ نامعلوم",attemptCount:"تعداد تلاش‌ها",
+    verifiedBoundary:"مرز مستقل تأییدشده",unverifiedBoundary:"مرز مستقل تأیید نشده",
+    integrityOk:"گزارش سالم",integrityFailed:"گزارش بدون اعتبار کافی",
+    quotaUnlimited:"سقف شمارش تعریف نشده",quotaUsed:"درخواست ثبت‌شده",
+    quotaRemaining:"درخواست باقی‌مانده",unknownCost:"هزینهٔ دلاری نامعلوم",
+    verificationSummary:"خلاصهٔ آزمون‌ها",passedCases:"موفق",failedCases:"ناموفق",
+    blockedAction:"عملیات اجرایی تا تأیید مرز ایزوله غیرفعال است.",
+    blockedStage:"مسدود",noProjectInspection:"برای نمایش شواهد یک پروژه انتخاب کنید."
+  });
+  Object.assign(words.en, {
+    executionCenter:"Execution monitor",verificationCenter:"Verification & Gate",
+    deliveryCenter:"Delivery & recovery",operationalWorkspace:"Project control plane",
+    operationalSubtitle:"Evidence from the actual CSEF controller, never inferred progress.",
+    refreshEvidence:"Refresh evidence",runVisibility:"Runs recorded in SQLite",
+    readOnly:"Read-only",providerUsage:"API usage and calls",
+    gateAuthority:"Independent authority",recordedEvaluations:"Recorded evaluations",
+    acceptedCheckpoints:"Verified checkpoints",
+    verificationCaution:"Docker REVIEW cannot grant PASS or automatic delivery.",
+    evidenceFirst:"Evidence-based",packageStatus:"Delivery package",
+    unknownPackage:"Final package receipt is not tracked by the control store.",
+    recoveryStatus:"Recovery status",
+    recoveryCaution:"Unknown attempts cannot be replayed without reconciliation. Controls depend on S3/S4.",
+    noRuns:"This project has no recorded runs.",noEvidence:"No test evidence recorded yet.",
+    noCalls:"No model calls recorded yet.",noRecovery:"No runs requiring recovery.",
+    selectedRun:"Selected run",gatePassed:"Gate-verified acceptance",
+    reviewOnly:"Review",notVerifiedRun:"Awaiting verified evidence",
+    unknownOutcome:"Unknown outcome",attemptCount:"Attempts",
+    verifiedBoundary:"Independent boundary verified",unverifiedBoundary:"Boundary not verified",
+    integrityOk:"Report integrity valid",integrityFailed:"Report not independently validated",
+    quotaUnlimited:"No request-count cap set",quotaUsed:"Recorded requests",
+    quotaRemaining:"Requests remaining",unknownCost:"USD cost unknown",
+    verificationSummary:"Test case summary",passedCases:"Passed",failedCases:"Failed",
+    blockedAction:"Execution controls remain disabled until isolation is verified.",
+    blockedStage:"Blocked",noProjectInspection:"Select a project to inspect its evidence."
+  });
+
+  Object.assign(words.fa, {
+    gateControlled:"تحت کنترل Gate",selectRun:"انتخاب اجرا",
+    reviewInDocker:"بازبینی Docker",verifiedExport:"ساخت بستهٔ معتبر",
+    downloadVerified:"دریافت بسته",reviewExplanation:"فقط کد از قبل بررسی‌شده در Docker بدون شبکه و با منابع محدود اجرا می‌شود. نتیجه REVIEW باقی می‌ماند.",
+    reviewImage:"ایمیج ثابت Docker با SHA-256",reviewSourceConsent:"تأیید می‌کنم کد این اجرا را بررسی کرده‌ام.",
+    reviewOnlyConsent:"می‌پذیرم این بررسی مجوز PASS یا تحویل نیست.",
+    startReview:"شروع بازبینی",reviewRecorded:"بازبینی ثبت شد.",
+    confirmExport:"ساخت بسته فقط از checkpoint مستقل تأییدشده انجام می‌شود. ادامه می‌دهید؟",
+    exported:"بستهٔ تأییدشده ساخته شد."
+  });
+  Object.assign(words.en, {
+    gateControlled:"Gate-controlled",selectRun:"Select run",
+    reviewInDocker:"Docker review",verifiedExport:"Export verified package",
+    downloadVerified:"Download package",reviewExplanation:"Only pre-reviewed source runs inside network-disabled, resource-limited Docker. Results remain REVIEW.",
+    reviewImage:"Immutable Docker image with SHA-256",reviewSourceConsent:"I confirm I personally reviewed the source.",
+    reviewOnlyConsent:"I understand this cannot authorize PASS or release.",
+    startReview:"Start review",reviewRecorded:"Review evidence recorded.",
+    confirmExport:"Export requires an independently accepted Gate checkpoint. Continue?",
+    exported:"Verified package exported."
+  });
   const $ = id => document.getElementById(id);
   const state = {
     lang:localStorage.getItem("csef-lang") === "en" ? "en" : "fa",
@@ -147,7 +222,7 @@
     document.querySelectorAll("[data-placeholder]").forEach(el=>el.placeholder=tr(el.dataset.placeholder));
     $("today-label").textContent=new Intl.DateTimeFormat(lang==="fa"?"fa-IR":"en-GB",{dateStyle:"medium"}).format(new Date());
     if(state.overview)renderOverview();
-    renderGraph();
+    renderGraph();renderOperations();
   }
   async function load() {
     try {
@@ -157,7 +232,7 @@
       if(!state.selected&&state.projects.length)state.selected=state.projects[0].slug;
       renderOverview();
       if(state.selected)await selectProject(state.selected,false);
-      else {state.current=null;renderGraph();}
+      else {state.current=null;state.inspection=null;renderGraph();renderOperations();}
     }catch(err){toast(tr("errorPrefix")+err.message,true);}
   }
   function renderOverview() {
@@ -200,7 +275,7 @@
       const item=make("div","roadmap-item");
       item.append(make("span","roadmap-number",p.id.slice(1)),
         make("span","roadmap-name",tr(p.name)),
-        make("span","roadmap-state "+p.state,tr(p.state==="partial"?"partial":p.state==="prototype"?"prototype":"notVerified")));
+        make("span","roadmap-state "+p.state,tr(p.state==="partial"?"partial":p.state==="prototype"?"prototype":p.state==="blocked"?"blockedStage":"notVerified")));
       wrap.append(item);
     });
   }
@@ -215,9 +290,13 @@
     state.selected=slug;$("project-select").value=slug;
     $("generate-plan").disabled=false;renderProjects();
     try {
-      state.current=await request("/api/projects/"+encodeURIComponent(slug));
-      renderGraph();if(scroll)$("graph").scrollIntoView({behavior:"smooth",block:"start"});
-    }catch(err){state.current=null;renderGraph();toast(tr("errorPrefix")+err.message,true);}
+      const [details, evidence] = await Promise.all([
+        request("/api/projects/"+encodeURIComponent(slug)),
+        request("/api/projects/"+encodeURIComponent(slug)+"/inspection")
+      ]);
+      state.current=details;state.inspection=evidence;
+      renderGraph();renderOperations();if(scroll)$("graph").scrollIntoView({behavior:"smooth",block:"start"});
+    }catch(err){state.current=null;state.inspection=null;renderGraph();renderOperations();toast(tr("errorPrefix")+err.message,true);}
   }
   function renderGraph() {
     const wrap=$("graph-nodes"),edges=$("graph-edges");
@@ -270,6 +349,124 @@
     toast(task.id+" — "+task.title+"\n"+tr("taskAcceptance")+": "+task.acceptance+
       "\n"+tr("dependsOn")+": "+deps+"\n"+tr("files")+": "+task.files.join(", "));
   }
+
+  function evidenceLine(title, subtitle, tone) {
+    const row=make("div","evidence-row"+(tone?" "+tone:""));
+    const dot=make("span","evidence-dot");
+    const body=make("span","evidence-body");
+    body.append(make("strong","",title),make("small","",subtitle));
+    row.append(dot,body);
+    return row;
+  }
+  function renderOperations() {
+    const data=state.inspection;
+    const runs=$("run-list"),evaluations=$("evaluation-list");
+    const calls=$("api-call-list"),recoveries=$("recovery-list");
+    [runs,evaluations,calls,recoveries].forEach(el=>el.replaceChildren());
+    if(!data){
+      $("run-select").replaceChildren(make("option","",tr("selectRun")));$("run-select").options[0].value="";
+      updateRunActions();
+      $("run-count").textContent="—";
+      $("evaluation-count").textContent="—";$("checkpoint-count").textContent="—";
+      $("quota-display").textContent="—";$("delivery-state").textContent=tr("unknownPackage");
+      [runs,evaluations,calls,recoveries].forEach(el=>el.append(make("p","evidence-empty",tr("noProjectInspection"))));
+      return;
+    }
+    const gate=data.gate,recorded=gate.runs||[];
+    const selected=$("run-select"),prior=selected.value;
+    selected.replaceChildren(make("option","",tr("selectRun")));selected.options[0].value="";
+    recorded.forEach(run=>{
+      const opt=make("option","",run.id.slice(0,19)+"… · "+run.status);
+      opt.value=run.id;selected.append(opt);
+    });
+    selected.value=recorded.some(x=>x.id===prior)?prior:"";
+    updateRunActions();
+    $("run-count").textContent=String(recorded.length);
+    $("evaluation-count").textContent=String((gate.evaluations||[]).length);
+    $("checkpoint-count").textContent=String(gate.accepted_checkpoint_count||0);
+    $("delivery-state").textContent=tr("unknownPackage");
+    if(!recorded.length)runs.append(make("p","evidence-empty",tr("noRuns")));
+    recorded.slice(0,12).forEach(run=>{
+      const status=run.accepted_checkpoint?tr("gatePassed"):run.status;
+      runs.append(evidenceLine(run.id.slice(0,16)+"… · "+status,
+        tr("attemptCount")+": "+run.attempts+" · "+run.created,
+        run.accepted_checkpoint?"passed":run.status==="failed_or_unknown"?"warning":""));
+    });
+    const checks=gate.evaluations||[];
+    if(!checks.length)evaluations.append(make("p","evidence-empty",tr("noEvidence")));
+    checks.slice(0,12).forEach(ev=>{
+      const passed=(ev.cases||[]).filter(x=>x.passed).length;
+      const total=(ev.cases||[]).length;
+      const integrity=ev.report_integrity?tr("integrityOk"):tr("integrityFailed");
+      const boundary=ev.verified_boundary?tr("verifiedBoundary"):tr("unverifiedBoundary");
+      evaluations.append(evidenceLine(
+        ev.id.slice(0,17)+"… · "+ev.status,
+        tr("verificationSummary")+": "+passed+"/"+total+" · "+integrity+" · "+boundary,
+        ev.status==="pass"&&ev.verified_boundary&&ev.report_integrity?"passed":
+        ev.status==="fail"||!ev.report_integrity?"warning":""));
+    });
+    const budget=data.provider_budget,stats=budget&&budget.breakdown;
+    $("quota-display").textContent=budget?
+      tr("quotaUsed")+": "+budget.used_calls+" · "+
+      (budget.remaining_calls===null?tr("quotaUnlimited"):tr("quotaRemaining")+": "+budget.remaining_calls):
+      tr("unknownCost");
+    const recordedCalls=data.calls||[];
+    if(!recordedCalls.length)calls.append(make("p","evidence-empty",tr("noCalls")));
+    recordedCalls.slice(0,8).forEach(call=>{
+      const usage=call.receipt&&call.receipt.usage;
+      const totals=usage?String(usage.input_tokens??"?")+"/"+String(usage.output_tokens??"?"):"—";
+      calls.append(evidenceLine("#"+call.id+" · "+call.role+" · "+call.status,
+        "tokens in/out: "+totals+" · "+tr("unknownCost"),
+        call.status==="failed_or_unknown"?"warning":""));
+    });
+    const needs=recorded.filter(x=>!x.accepted_checkpoint);
+    if(!needs.length)recoveries.append(make("p","evidence-empty",tr("noRecovery")));
+    needs.slice(0,8).forEach(run=>recoveries.append(evidenceLine(
+      run.id.slice(0,16)+"… · "+run.status,
+      tr("blockedAction"),
+      "warning"
+    )));
+  }
+
+  function updateRunActions() {
+    const run=(state.inspection?.gate?.runs||[]).find(r=>r.id===$("run-select").value);
+    $("review-run").disabled=!run||run.status==="accepted"||state.busy;
+    $("export-run").disabled=!run||run.accepted_checkpoint!==true||state.busy;
+    const download=$("download-run");
+    if(download.dataset.runId!==($("run-select").value||"")){
+      download.hidden=true;download.removeAttribute("href");
+    }
+  }
+  async function runReviewed(event) {
+    event.preventDefault();
+    const runId=$("run-select").value;
+    if(!state.selected||!runId||state.busy)return;
+    const image=$("review-image").value.trim();
+    if(!$("review-source").checked||!$("review-only").checked)return;
+    state.busy=true;$("start-review").disabled=true;
+    try {
+      const result=await request("/api/projects/"+encodeURIComponent(state.selected)+
+        "/runs/"+encodeURIComponent(runId)+"/review","POST",{
+          image,confirm_reviewed_source:true,confirm_measure_only:true});
+      $("review-dialog").close();toast(tr("reviewRecorded")+" "+result.status);
+      await selectProject(state.selected,false);
+    }catch(err){toast(tr("errorPrefix")+err.message,true);}
+    finally {state.busy=false;$("start-review").disabled=false;updateRunActions();}
+  }
+  async function exportRun() {
+    const runId=$("run-select").value;
+    if(!state.selected||!runId||state.busy||!window.confirm(tr("confirmExport")))return;
+    state.busy=true;$("export-run").disabled=true;
+    try {
+      const result=await request("/api/projects/"+encodeURIComponent(state.selected)+
+        "/runs/"+encodeURIComponent(runId)+"/export","POST",{confirm_export:true});
+      toast(tr("exported")+" SHA-256: "+result.archive_sha256.slice(0,16)+"…");
+      await selectProject(state.selected,false);
+      const link=$("download-run");
+      link.hidden=false;link.href=result.download_url;link.dataset.runId=runId;
+    }catch(err){toast(tr("errorPrefix")+err.message,true);}
+    finally {state.busy=false;updateRunActions();}
+  }
   function busy(value) {
     state.busy=value;
     [$("new-project-form").querySelector("button"),$("generate-plan"),$("run-plan")].forEach(button=>{
@@ -312,9 +509,16 @@
     $("language-toggle").addEventListener("click",()=>language(state.lang==="fa"?"en":"fa"));
     $("new-project-form").addEventListener("submit",create);
     $("project-filter").addEventListener("input",renderProjects);
+    $("refresh-inspection").addEventListener("click",()=>{if(state.selected)selectProject(state.selected,false);else load();});
+    $("run-select").addEventListener("change",updateRunActions);
+    $("review-run").addEventListener("click",()=>{$("review-dialog").showModal();});
+    $("close-review").addEventListener("click",()=>$("review-dialog").close());
+    $("cancel-review").addEventListener("click",()=>$("review-dialog").close());
+    $("review-form").addEventListener("submit",runReviewed);
+    $("export-run").addEventListener("click",exportRun);
     $("project-select").addEventListener("change",event=>{
       if(event.target.value)selectProject(event.target.value,false);
-      else{state.selected=null;state.current=null;renderProjects();renderGraph();$("generate-plan").disabled=true;}
+      else{state.selected=null;state.current=null;state.inspection=null;renderProjects();renderGraph();renderOperations();$("generate-plan").disabled=true;}
     });
     $("generate-plan").addEventListener("click",()=>{if(state.selected)$("plan-dialog").showModal();});
     $("close-plan").addEventListener("click",()=>$("plan-dialog").close());

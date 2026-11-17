@@ -39,6 +39,9 @@
         <button type="button" class="nav-link" data-target="projects"><svg><use href="#i-layer"/></svg><span data-i18n="projects">پروژه‌ها</span><span class="nav-count" id="nav-projects">0</span></button>
         <button type="button" class="nav-link" data-target="graph"><svg><use href="#i-nodes"/></svg><span data-i18n="taskGraph">گراف وظایف</span></button>
         <button type="button" class="nav-link" data-target="activity"><svg><use href="#i-activity"/></svg><span data-i18n="activity">فعالیت‌ها</span></button>
+        <button type="button" class="nav-link" data-target="execution-center"><svg><use href="#i-code"/></svg><span data-i18n="executionCenter">مانیتور اجرا</span></button>
+        <button type="button" class="nav-link" data-target="verification-center"><svg><use href="#i-shield"/></svg><span data-i18n="verificationCenter">ارزیابی و Gate</span></button>
+        <button type="button" class="nav-link" data-target="delivery-center"><svg><use href="#i-doc"/></svg><span data-i18n="deliveryCenter">تحویل و بازیابی</span></button>
       </nav>
       <p class="menu-caption second-menu" data-i18n="system">سیستم</p>
       <nav class="primary-nav" aria-label="System">
@@ -145,6 +148,45 @@
             <div class="insight-footer"><span data-i18n="uiMode">حالت رابط</span><strong>S6a · Local</strong></div>
           </section>
         </div>
+
+        <section class="operations-area" aria-labelledby="operations-heading">
+          <div class="operations-intro">
+            <div><p class="section-overline">PROJECT CONTROL PLANE</p><h2 id="operations-heading" data-i18n="operationalWorkspace">مرکز عملیاتی پروژه</h2>
+              <p data-i18n="operationalSubtitle">وضعیت مستقیم از هستهٔ CSEF و شواهد موجود؛ نه پیشرفت فرضی.</p></div>
+            <button type="button" id="refresh-inspection" class="outline-button"><svg><use href="#i-activity"/></svg><span data-i18n="refreshEvidence">به‌روزرسانی شواهد</span></button>
+          </div>
+          <div class="operations-grid">
+            <section id="execution-center" class="panel ops-panel" aria-labelledby="execution-heading">
+              <div class="panel-header"><div><p class="section-overline">S0 · S1 · S2 · S3</p><h3 id="execution-heading" data-i18n="executionCenter">مانیتور اجرا</h3></div><span class="operations-counter" id="run-count">—</span></div>
+              <div class="run-controls"><span data-i18n="runVisibility">اجرای ثبت‌شده در SQLite</span><span class="soft-chip" data-i18n="gateControlled">تحت کنترل Gate</span></div>
+              <div class="ops-actions">
+                <label for="run-select" class="sr-only" data-i18n="selectRun">انتخاب اجرا</label>
+                <select id="run-select" aria-label="Select run"><option value="" data-i18n="selectRun">انتخاب اجرا</option></select>
+                <button type="button" class="outline-button" id="review-run" disabled data-i18n="reviewInDocker">بازبینی Docker</button>
+                <button type="button" class="outline-button" id="export-run" disabled data-i18n="verifiedExport">ساخت بستهٔ معتبر</button>
+                <a id="download-run" class="outline-button" hidden download data-i18n="downloadVerified">دریافت بسته</a>
+              </div>
+              <div class="ops-events" id="run-list" aria-live="polite"></div>
+              <div class="ops-divider"></div>
+              <div class="ops-detail-heading"><h4 data-i18n="providerUsage">مصرف API و فراخوانی‌ها</h4><span id="quota-display" class="soft-chip">—</span></div>
+              <div class="ops-events" id="api-call-list"></div>
+            </section>
+            <section id="verification-center" class="panel ops-panel" aria-labelledby="verification-heading">
+              <div class="panel-header"><div><p class="section-overline">S4 · INDEPENDENT GATE</p><h3 id="verification-heading" data-i18n="verificationCenter">ارزیابی و Gate</h3></div><span class="soft-chip" data-i18n="gateAuthority">اختیار مستقل</span></div>
+              <div class="ops-metrics"><div><span data-i18n="recordedEvaluations">ارزیابی‌های ثبت‌شده</span><strong id="evaluation-count">—</strong></div><div><span data-i18n="acceptedCheckpoints">Checkpoint معتبر</span><strong id="checkpoint-count">—</strong></div></div>
+              <div class="ops-events" id="evaluation-list" aria-live="polite"></div>
+              <div class="ops-caution"><svg><use href="#i-shield"/></svg><span data-i18n="verificationCaution">اجرای Docker در حالت REVIEW اجازهٔ PASS یا تحویل خودکار نمی‌دهد.</span></div>
+            </section>
+            <section id="delivery-center" class="panel ops-panel" aria-labelledby="delivery-heading">
+              <div class="panel-header"><div><p class="section-overline">S5 · S7 · RECOVERY</p><h3 id="delivery-heading" data-i18n="deliveryCenter">تحویل و بازیابی</h3></div><span class="soft-chip" data-i18n="evidenceFirst">مبتنی بر شواهد</span></div>
+              <div class="delivery-feature"><div class="delivery-icon"><svg><use href="#i-doc"/></svg></div><div><strong data-i18n="packageStatus">بستهٔ قابل تحویل</strong><p id="delivery-state" data-i18n="unknownPackage">رسید بستهٔ نهایی در پایگاه کنترل ثبت نشده است.</p></div></div>
+              <div class="ops-divider"></div>
+              <div class="ops-detail-heading"><h4 data-i18n="recoveryStatus">وضعیت ادامهٔ اجرا</h4></div>
+              <div class="ops-events" id="recovery-list"></div>
+              <div class="ops-caution"><svg><use href="#i-shield"/></svg><span data-i18n="recoveryCaution">اجرای مجددِ نامعلوم بدون تطبیق شواهد مجاز نیست. فعال‌کردن کنترل‌ها به S3/S4 وابسته است.</span></div>
+            </section>
+          </div>
+        </section>
         <footer class="page-footer"><span>© CSEF Execution Studio</span><span data-i18n="privacyFoot">Private by design · Local only</span></footer>
       </main>
     </div>
@@ -161,6 +203,19 @@
       <input id="model" required maxlength="100" dir="ltr" placeholder="e.g. gpt-5.5">
       <label class="consent"><input id="confirm-spend" type="checkbox" required><span data-i18n="consent">هزینهٔ احتمالی یک درخواست API را تأیید می‌کنم.</span></label>
       <div class="modal-actions"><button type="button" class="outline-button" id="cancel-plan" data-i18n="cancel">انصراف</button><button type="submit" class="primary-button" id="run-plan" data-i18n="runPlanner">تولید طرح</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="review-dialog" class="modal">
+    <form method="dialog" class="modal-inner" id="review-form">
+      <div class="modal-top"><div class="modal-icon"><svg><use href="#i-shield"/></svg></div><button type="button" id="close-review" class="modal-close" aria-label="Close">×</button></div>
+      <h2 data-i18n="reviewInDocker">بازبینی Docker</h2>
+      <p data-i18n="reviewExplanation">فقط کد از قبل بررسی‌شده در Docker بدون شبکه و با محدودیت منابع اجرا می‌شود؛ حتی با موفقیت آزمون، نتیجه REVIEW خواهد بود.</p>
+      <label for="review-image" data-i18n="reviewImage">ایمیج ثابت Docker با SHA-256</label>
+      <input id="review-image" required dir="ltr" placeholder="python:3.11-slim@sha256:..." maxlength="200">
+      <label class="consent"><input id="review-source" type="checkbox" required><span data-i18n="reviewSourceConsent">تأیید می‌کنم کد این اجرا را شخصاً بررسی کرده‌ام.</span></label>
+      <label class="consent"><input id="review-only" type="checkbox" required><span data-i18n="reviewOnlyConsent">می‌پذیرم نتیجه فقط REVIEW است، نه PASS یا مجوز تحویل.</span></label>
+      <div class="modal-actions"><button type="button" class="outline-button" id="cancel-review" data-i18n="cancel">انصراف</button><button type="submit" class="primary-button" id="start-review" data-i18n="startReview">شروع بازبینی</button></div>
     </form>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
