@@ -267,14 +267,14 @@ def _delivery(book: ProjectBook, gate: Gate, run_id: str, output: Path) -> dict:
                          (checkpoint["evaluation_id"],)).fetchone() if checkpoint else None
     if row is None or row["status"] != "accepted" or checkpoint is None or ev is None:
         raise Refused("no accepted Gate checkpoint; cannot package source")
-    if (ev["status"] != "pass" or ev["report_hash"] != checkpoint["report_sha256"]
-            or ev["source_hash"] != checkpoint["source_sha256"]
-            or checkpoint["spec_sha256"] != spec_sha):
+    if (ev["status"] != "pass" or ev["report_hash"] != checkpoint["report_hash"]
+            or ev["source_hash"] != checkpoint["source_hash"]
+            or checkpoint["spec_hash"] != spec_sha):
         raise Refused("checkpoint does not match trusted evaluation")
     report_path = Path(ev["report"])
     plain(report_path)
     raw = report_path.read_bytes()
-    if digest(raw) != checkpoint["report_sha256"]:
+    if digest(raw) != checkpoint["report_hash"]:
         raise Refused("verification report was modified")
     report = read_json(report_path)
     if (report["status"] != "pass" or report["measurement_only"] is not False
@@ -285,9 +285,9 @@ def _delivery(book: ProjectBook, gate: Gate, run_id: str, output: Path) -> dict:
         raise Refused("verification is not valid for current project")
     snapshot = Path(checkpoint["snapshot"])
     plain(snapshot)
-    if manifest(snapshot, spec["source_files"])[0] != checkpoint["source_sha256"]:
+    if manifest(snapshot, spec["source_files"])[0] != checkpoint["source_hash"]:
         raise Refused("source snapshot was modified after verification")
-    if manifest(gate.candidate(run_id), spec["source_files"])[0] != checkpoint["source_sha256"]:
+    if manifest(gate.candidate(run_id), spec["source_files"])[0] != checkpoint["source_hash"]:
         raise Refused("candidate drift after acceptance")
     output = Path(output).absolute()
     plain(output)
@@ -297,8 +297,8 @@ def _delivery(book: ProjectBook, gate: Gate, run_id: str, output: Path) -> dict:
         raise Refused("delivery parent directory does not exist")
     manifest_data = {"format": "csef-factory-delivery-v1", "run_id": run_id,
                      "project_sha256": report["project_sha256"],
-                     "verification_sha256": checkpoint["report_sha256"],
-                     "source_sha256": checkpoint["source_sha256"],
+                     "verification_sha256": checkpoint["report_hash"],
+                     "source_sha256": checkpoint["source_hash"],
                      "spec_sha256": spec_sha, "source_files": report["source_manifest"],
                      "case_ids": [x["id"] for x in report["cases"]],
                      "deployment_approved": False}
@@ -320,7 +320,7 @@ def _delivery(book: ProjectBook, gate: Gate, run_id: str, output: Path) -> dict:
             temp.unlink()
     return {"status": "delivered", "release_approved": False,
             "independent_gate_pass": True, "deployment_approved": False,
-            "archive": str(output), "run_id": run_id, "source_sha256": checkpoint["source_sha256"],
+            "archive": str(output), "run_id": run_id, "source_sha256": checkpoint["source_hash"],
             "tests_passed": len(report["cases"])}
 
 
