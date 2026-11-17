@@ -1,0 +1,41 @@
+name: Dashboard visual QA — Chromium desktop/mobile
+
+on:
+  pull_request:
+    paths:
+      - "src/csef_gate/ui/**"
+      - "tests/ui/test_visual_playwright.py"
+      - ".github/workflows/dashboard-visual.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chromium-desktop-mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install project and Playwright browser tests
+        run: |
+          python -m pip install -e .
+          python -m pip install pytest playwright
+      - name: Install actual Chromium browser
+        run: python -m playwright install --with-deps chromium
+      - name: Run real local FA/EN desktop and mobile QA
+        env:
+          CSEF_VISUAL_OUTPUT: visual-artifacts
+        run: python -m pytest -o addopts='' -q tests/ui/test_visual_playwright.py --junitxml=visual-junit.xml
+      - name: Upload browser screenshots and JUnit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: csef-dashboard-browser-evidence
+          path: |
+            visual-artifacts/*.png
+            visual-junit.xml
+          if-no-files-found: warn
