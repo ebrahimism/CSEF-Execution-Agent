@@ -322,3 +322,12 @@ html[dir=ltr] .nav-link.selected:before{inset-inline-start:17px}
 @media(max-width:1410px){.operations-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.operations-grid>:last-child{grid-column:1/-1}}
 @media(max-width:960px){.operations-grid{grid-template-columns:1fr}.operations-grid>:last-child{grid-column:auto}.ops-panel{min-height:0}}
 @media(max-width:620px){.operations-intro{align-items:start;flex-direction:column}.operations-intro h2{font-size:18px}.operations-grid{gap:12px}.ops-panel{padding:17px}}
+
+
+.ops-actions{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-bottom:14px}
+.ops-actions select{min-width:0;flex:1 1 150px;max-width:100%;padding:8px 10px;background:#131f36;color:#dce5fc;border:1px solid #3c4965;border-radius:8px;font-size:10px}
+.ops-actions .outline-button{min-height:35px;font-size:10px}
+.ops-actions [hidden]{display:none!important}
+.ops-actions a.outline-button{text-decoration:none}
+.roadmap-state.blocked{color:#f0c38e;background:#a674301b;border-color:#a6743040}
+@media(max-width:620px){.ops-actions{align-items:stretch}.ops-actions select{flex-basis:100%}.ops-actions .outline-button{flex:1}}
