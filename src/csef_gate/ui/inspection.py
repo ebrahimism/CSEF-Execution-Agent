@@ -95,15 +95,15 @@ def _gate_state(book, con):
         spec_sha = None
 
     run_rows = [dict(row) for row in con.execute(
-        "SELECT id,status,attempts,created FROM runs ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))
+        "SELECT id,status,attempts,created FROM runs ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))]
     attempted = [dict(row) for row in con.execute(
-        "SELECT id,run_id,status,created FROM attempts ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))
+        "SELECT id,run_id,status,created FROM attempts ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))]
     evaluated = [dict(row) for row in con.execute(
         "SELECT id,run_id,status,report,report_hash,source_hash,spec_hash,created "
-        "FROM evaluations ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))
+        "FROM evaluations ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))]
     checkpoints = [dict(row) for row in con.execute(
         "SELECT id,run_id,evaluation_id,source_hash,spec_hash,report_hash,created "
-        "FROM checkpoints ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))
+        "FROM checkpoints ORDER BY created DESC LIMIT ?", (MAX_ENTRIES,))]
     gate = Gate(book.root)
     evals = []
     by_eval = {}
