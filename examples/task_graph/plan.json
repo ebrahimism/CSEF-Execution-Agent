@@ -1,0 +1,136 @@
+{
+  "tasks": [
+    {
+      "id": "SPEC",
+      "title": "Define order and inventory contract",
+      "kind": "document",
+      "fact_ids": [
+        "GOAL",
+        "REQ-001",
+        "REQ-002",
+        "CON-001"
+      ],
+      "depends_on": [],
+      "scope": "Specify SQL tables and screen interactions",
+      "inputs": [
+        "Accepted store brief"
+      ],
+      "outputs": [
+        "Order and UI contract"
+      ],
+      "acceptance": [
+        "Owner accepts the contract for stock and order behavior"
+      ],
+      "files": [
+        "docs/contract.md"
+      ]
+    },
+    {
+      "id": "STOCK",
+      "title": "Implement SQLite inventory and orders",
+      "kind": "code",
+      "fact_ids": [
+        "GOAL",
+        "REQ-001",
+        "CON-001"
+      ],
+      "depends_on": [
+        "SPEC"
+      ],
+      "scope": "Implement bounded inventory and order persistence",
+      "inputs": [
+        "Approved order contract"
+      ],
+      "outputs": [
+        "Inventory and order module"
+      ],
+      "acceptance": [
+        "Stock cannot become negative after valid orders"
+      ],
+      "files": [
+        "src/inventory.py"
+      ]
+    },
+    {
+      "id": "WEBUI",
+      "title": "Implement staff web UI and validation",
+      "kind": "code",
+      "fact_ids": [
+        "GOAL",
+        "REQ-002",
+        "CON-001"
+      ],
+      "depends_on": [
+        "SPEC"
+      ],
+      "scope": "Implement input validation and order screen",
+      "inputs": [
+        "Approved UI contract"
+      ],
+      "outputs": [
+        "Operator interface module"
+      ],
+      "acceptance": [
+        "Staff can submit valid orders and see errors"
+      ],
+      "files": [
+        "src/web.py"
+      ]
+    },
+    {
+      "id": "INTEG",
+      "title": "Test the complete order workflow",
+      "kind": "integration",
+      "fact_ids": [
+        "GOAL",
+        "REQ-001",
+        "REQ-002",
+        "CON-001"
+      ],
+      "depends_on": [
+        "STOCK",
+        "WEBUI"
+      ],
+      "scope": "Independently verify database and UI behavior",
+      "inputs": [
+        "Storage and UI modules"
+      ],
+      "outputs": [
+        "Integration test report"
+      ],
+      "acceptance": [
+        "Two orders persist and invalid quantities are rejected"
+      ],
+      "files": [
+        "tests/test_end_to_end.py"
+      ]
+    },
+    {
+      "id": "DELIVER",
+      "title": "Package a runnable application",
+      "kind": "delivery",
+      "fact_ids": [
+        "GOAL",
+        "REQ-001",
+        "REQ-002",
+        "CON-001"
+      ],
+      "depends_on": [
+        "INTEG"
+      ],
+      "scope": "Write installation and recovery instructions",
+      "inputs": [
+        "Verified integration tests"
+      ],
+      "outputs": [
+        "Runnable source bundle and guide"
+      ],
+      "acceptance": [
+        "Clean install starts app and backup restore preserves orders"
+      ],
+      "files": [
+        "README.md"
+      ]
+    }
+  ]
+}
