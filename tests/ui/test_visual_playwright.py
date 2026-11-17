@@ -79,8 +79,18 @@ def test_real_chromium_rtl_ltr_and_owner_workflow(local_dashboard, tmp_path, wid
             expect(page.locator("#owner-facts")).to_contain_text("REQ-001")
             expect(page.locator("#delivery-content")).to_contain_text("تحویل")
             page.locator("#operations").scroll_into_view_if_needed()
-            assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 2"), \
-                "Horizontal overflow in RTL " + str(width)
+            overflow = page.evaluate("""() => ({
+                width: innerWidth,
+                document: document.documentElement.scrollWidth,
+                offenders: [...document.querySelectorAll("body *")].map(x => {
+                    const b = x.getBoundingClientRect();
+                    return {tag: x.tagName, id: x.id, cls: x.className && x.className.baseVal
+                      ? x.className.baseVal : String(x.className || "").slice(0,50),
+                      left: Math.round(b.left), right: Math.round(b.right), width: Math.round(b.width)};
+                }).filter(x => x.right > innerWidth+3 || x.left < -3)
+                  .sort((a,b)=>b.right-a.right).slice(0,12)
+            })""")
+            assert overflow["document"] <= width + 2,                 "Horizontal overflow in RTL " + str(width) + ": " + str(overflow)
             page.screenshot(path=str(out / ("dashboard-" + str(width) + "-fa.png")),
                             full_page=True, animations="disabled")
 
