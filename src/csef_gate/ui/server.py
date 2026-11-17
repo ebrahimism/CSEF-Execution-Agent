@@ -19,6 +19,7 @@ from ..core import Refused, encoded, parse_json, plain
 from ..engineering.task_graph import validate_graph
 from ..factory import create_brief, plan_brief
 from ..project import ProjectBook, QUESTIONS
+from .inspection import inspection, run_detail
 
 SLUG = re.compile(r"[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?\Z")
 MAX_BODY = 24_000
@@ -110,6 +111,15 @@ class DashboardService:
                 } for t in tasks],
             }
         return None
+
+    def project_inspection(self, slug: str) -> dict:
+        """Observable facts from the existing owner/Gate stores; no model authority."""
+        book = ProjectBook(self._directory(slug))
+        return inspection(book)
+
+    def run_inspection(self, slug: str, run_id: str) -> dict:
+        book = ProjectBook(self._directory(slug))
+        return run_detail(book, run_id)
 
     def projects(self) -> list[dict]:
         items = []
@@ -237,6 +247,12 @@ def make_handler(service: DashboardService, token: str):
                 return "overview", ()
             if parsed.path == "/api/projects":
                 return "projects", ()
+            m = re.fullmatch(r"/api/projects/([a-z0-9-]{1,48})/runs/(run-[0-9a-f]{32})", parsed.path)
+            if m:
+                return "run_inspection", (m.group(1), m.group(2))
+            m = re.fullmatch(r"/api/projects/([a-z0-9-]{1,48})/(inspection)", parsed.path)
+            if m:
+                return "inspection", (m.group(1),)
             m = re.fullmatch(r"/api/projects/([a-z0-9-]{1,48})(?:/(plan))?", parsed.path)
             if m:
                 return "plan" if m.group(2) else "project", (m.group(1),)
@@ -260,6 +276,10 @@ def make_handler(service: DashboardService, token: str):
                     return self._send(HTTPStatus.OK, {"projects": service.projects()})
                 if route == "project":
                     return self._send(HTTPStatus.OK, service.project(arguments[0]))
+                if route == "inspection":
+                    return self._send(HTTPStatus.OK, service.project_inspection(arguments[0]))
+                if route == "run_inspection":
+                    return self._send(HTTPStatus.OK, service.run_inspection(*arguments))
                 return self._send(HTTPStatus.NOT_FOUND, {"error": "unknown route"})
             except (Refused, OSError, ValueError, KeyError) as error:
                 return self._send(HTTPStatus.BAD_REQUEST, {"error": str(error)})
