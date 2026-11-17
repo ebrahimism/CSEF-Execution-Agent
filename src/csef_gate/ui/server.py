@@ -20,6 +20,7 @@ from ..engineering.task_graph import validate_graph
 from ..factory import create_brief, plan_brief
 from ..project import ProjectBook, QUESTIONS
 from .inspection import inspection, run_detail
+from .operations import reviewed_evaluation, export_accepted, read_export
 
 SLUG = re.compile(r"[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?\Z")
 MAX_BODY = 24_000
@@ -121,6 +122,18 @@ class DashboardService:
         book = ProjectBook(self._directory(slug))
         return run_detail(book, run_id)
 
+    def review_run(self, slug: str, run_id: str, payload: dict) -> dict:
+        book = ProjectBook(self._directory(slug))
+        return reviewed_evaluation(book, run_id, payload)
+
+    def export_run(self, slug: str, run_id: str, payload: dict) -> dict:
+        book = ProjectBook(self._directory(slug))
+        return export_accepted(book, run_id, payload)
+
+    def download_run(self, slug: str, run_id: str) -> bytes:
+        book = ProjectBook(self._directory(slug))
+        return read_export(book, run_id)
+
     def projects(self) -> list[dict]:
         items = []
         for path in sorted(self.workspace.iterdir(), key=lambda p: p.name):
@@ -207,7 +220,7 @@ def make_handler(service: DashboardService, token: str):
         server_version = "CSEF-LocalDashboard/1"
         sys_version = ""
 
-        def _headers(self, status, content_type, content_length):
+        def _headers(self, status, content_type, content_length, *, download_name=None):
             self.send_response(status)
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(content_length))
@@ -215,6 +228,8 @@ def make_handler(service: DashboardService, token: str):
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("X-Frame-Options", "DENY")
             self.send_header("Referrer-Policy", "no-referrer")
+            if download_name is not None:
+                self.send_header("Content-Disposition", f'attachment; filename="{download_name}"')
             self.send_header(
                 "Content-Security-Policy",
                 "default-src 'none'; script-src 'self'; style-src 'self'; "
@@ -247,6 +262,11 @@ def make_handler(service: DashboardService, token: str):
                 return "overview", ()
             if parsed.path == "/api/projects":
                 return "projects", ()
+            m = re.fullmatch(
+                r"/api/projects/([a-z0-9-]{1,48})/runs/(run-[0-9a-f]{32})/(review|export|artifact)",
+                parsed.path)
+            if m:
+                return m.group(3), (m.group(1), m.group(2))
             m = re.fullmatch(r"/api/projects/([a-z0-9-]{1,48})/runs/(run-[0-9a-f]{32})", parsed.path)
             if m:
                 return "run_inspection", (m.group(1), m.group(2))
@@ -280,6 +300,11 @@ def make_handler(service: DashboardService, token: str):
                     return self._send(HTTPStatus.OK, service.project_inspection(arguments[0]))
                 if route == "run_inspection":
                     return self._send(HTTPStatus.OK, service.run_inspection(*arguments))
+                if route == "artifact":
+                    raw = service.download_run(*arguments)
+                    self._headers(HTTPStatus.OK, "application/zip", len(raw),
+                                  download_name=arguments[1] + ".zip")
+                    return self.wfile.write(raw)
                 return self._send(HTTPStatus.NOT_FOUND, {"error": "unknown route"})
             except (Refused, OSError, ValueError, KeyError) as error:
                 return self._send(HTTPStatus.BAD_REQUEST, {"error": str(error)})
@@ -291,7 +316,7 @@ def make_handler(service: DashboardService, token: str):
                 return self._send(HTTPStatus.FORBIDDEN, {"error": "invalid csrf token"})
             try:
                 route, arguments = self._route()
-                if route not in ("projects", "plan"):
+                if route not in ("projects", "plan", "review", "export"):
                     return self._send(HTTPStatus.NOT_FOUND, {"error": "unknown route"})
                 if self.headers.get("Content-Type", "").split(";")[0] != "application/json":
                     raise Refused("JSON body required")
@@ -301,6 +326,10 @@ def make_handler(service: DashboardService, token: str):
                 payload = parse_json(self.rfile.read(int(length)).decode("utf-8"))
                 if route == "projects":
                     return self._send(HTTPStatus.CREATED, service.create(payload))
+                if route == "review":
+                    return self._send(HTTPStatus.OK, service.review_run(*arguments, payload))
+                if route == "export":
+                    return self._send(HTTPStatus.CREATED, service.export_run(*arguments, payload))
                 return self._send(HTTPStatus.OK, service.generate_plan(arguments[0], payload))
             except (Refused, ValueError, UnicodeError, OSError, KeyError, TypeError) as error:
                 # Errors may include user-controlled paths but never provider key/header data.
