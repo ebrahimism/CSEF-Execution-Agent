@@ -70,3 +70,5 @@
   .projects-list,.project-row,.graph-viewport {min-width:0;max-width:100%}
   .project-row {width:100%}
 }
+
+.ops-action{margin-top:8px;justify-self:start;align-self:start;font-size:10px;padding:6px 10px}

@@ -21,6 +21,12 @@
       not_configured: "Gate هنوز پیکربندی نشده است",
       valid: "صحت داده بررسی شد", invalid: "یکپارچگی شواهد نامعتبر است",
       passed: "موفق", failed: "ناموفق", status: "وضعیت",
+      reviewAction: "اجرای آزمون REVIEW",
+      reviewSuccess: "آزمون محدود اجرا شد. نتیجه فقط برای بازبینی است.",
+      reviewError: "آزمون اجرا نشد: ",
+      exportAction: "بسته‌بندی checkpoint",
+      exportConfirm: "آیا بسته‌بندی checkpoint پذیرفته‌شده را تأیید می‌کنید؟ این مجوز استقرار نیست.",
+      exportError: "بسته‌بندی متوقف شد: ",
       noRuns: "هیچ اجرای ثبت‌شده‌ای وجود ندارد.",
       blockedRun: "اجرای خودکار از داشبورد غیرفعال است؛ S4 هنوز تأیید امنیتی ندارد.",
       noEvaluations: "هنوز آزمونی توسط Gate اجرا نشده است.",
@@ -65,6 +71,12 @@
       not_configured: "Gate is not configured yet",
       valid: "Evidence integrity checked", invalid: "Invalid evidence integrity",
       passed: "Passed", failed: "Failed", status: "Status",
+      reviewAction: "Run REVIEW-only test",
+      reviewSuccess: "Review-only measurement complete; this is not release approval.",
+      reviewError: "Review could not run: ",
+      exportAction: "Package checkpoint",
+      exportConfirm: "Package the existing accepted checkpoint? This does not authorize deployment.",
+      exportError: "Packaging blocked: ",
       noRuns: "No execution runs have been recorded.",
       blockedRun: "Dashboard execution remains disabled until S4 isolation is verified.",
       noEvaluations: "No Gate evaluation has run yet.",
@@ -179,6 +191,12 @@
       info.append(subtitle(t("attempts") + ": " + run.attempts),
         subtitle(t("tests") + ": " + (run.latest_evaluation || "—")));
       n.append(info, line(t("status"), run.recovery, true));
+      if (!run.unknown_attempt && run.status !== "accepted"
+          && control.gate.integrity === "valid") {
+        const action = el("button","outline-button ops-action",t("reviewAction"));
+        action.type="button";action.addEventListener("click",()=>openReview(run.id));
+        n.append(action);
+      }
       return n;
     }));
     warning.textContent = rows.some(x => x.unknown_attempt) ?
@@ -234,6 +252,12 @@
       gate.checkpoints.forEach(cp=>{
         const item=titleCard(cp.id,cp.run_id,cp.integrity === "valid" ? "verified" : "unknown");
         item.append(subtitle(cp.created));
+        if (cp.export_ready) {
+          const action=el("button","outline-button ops-action",t("exportAction"));
+          action.type="button";
+          action.addEventListener("click",()=>exportPackage(cp.run_id,action));
+          item.append(action);
+        }
         items.push(item);
       });
     }
@@ -315,6 +339,60 @@
       }
     }
   }
+  function openReview(runId) {
+    if(!slug||!csrf)return;
+    $("review-run-id").value=runId;
+    $("review-source-confirm").checked=false;
+    $("review-dialog").showModal();
+  }
+  async function submitReview(event) {
+    event.preventDefault();
+    if(!slug||!csrf||!$("review-source-confirm").checked)return;
+    const runId=$("review-run-id").value;
+    const image=$("review-image").value.trim();
+    const button=$("submit-review");
+    button.disabled=true;
+    try {
+      const result=await fetch("/api/projects/"+encodeURIComponent(slug)+"/review", {
+        method:"POST",credentials:"same-origin",cache:"no-store",
+        headers:{"Content-Type":"application/json","X-CSEF-CSRF":csrf},
+        body:JSON.stringify({
+          run_id:runId,image,confirm_reviewed_source:true,measure_only:true
+        })
+      });
+      const body=await result.json();
+      if(!result.ok)throw Error(body.error||"HTTP "+result.status);
+      $("review-dialog").close();
+      $("recovery-warning").textContent=t("reviewSuccess")+" "+body.status;
+      await refresh();
+    } catch(error) {
+      $("recovery-warning").textContent=t("reviewError")+error.message;
+    } finally {button.disabled=false;}
+  }
+  async function exportPackage(runId,button) {
+    if(!slug||!csrf||!window.confirm(t("exportConfirm")))return;
+    button.disabled=true;
+    try{
+      const response=await fetch("/api/projects/"+encodeURIComponent(slug)+"/export",{
+        method:"POST",credentials:"same-origin",cache:"no-store",
+        headers:{"Content-Type":"application/json","X-CSEF-CSRF":csrf},
+        body:JSON.stringify({run_id:runId,confirm_export:true})
+      });
+      const body=await response.json();
+      if(!response.ok)throw Error(body.error||"HTTP "+response.status);
+      const url=new URL(body.download,window.location.origin);
+      if(url.origin!==window.location.origin)throw Error("invalid download origin");
+      const link=el("a");
+      link.href=url.pathname;
+      link.download=runId+".zip";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      await refresh();
+    }catch(error){
+      $("recovery-warning").textContent=t("exportError")+error.message;
+    }finally{button.disabled=false;}
+  }
   async function save(event) {
     event.preventDefault();
     if(!project||!slug||!csrf)return;
@@ -352,6 +430,9 @@
     window.addEventListener("csef:language",()=>render());
     $("refresh-evidence").addEventListener("click",()=>refresh());
     $("owner-answers-form").addEventListener("submit",save);
+    $("review-form").addEventListener("submit",submitReview);
+    $("close-review").addEventListener("click",()=>$("review-dialog").close());
+    $("cancel-review").addEventListener("click",()=>$("review-dialog").close());
     render();
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);

@@ -4,6 +4,11 @@
   const words = {
     fa: {
       execution: "اجرا و بازیابی", verification: "آزمون و Gate", delivery: "تحویل و شواهد",
+      reviewTitle: "آزمون محدود REVIEW",
+      reviewDescription: "فقط پس از بازبینی دستی کد و انتخاب تصویر Docker با digest ثابت. این آزمون PASS یا مجوز تحویل صادر نمی‌کند.",
+      runIdLabel: "شناسهٔ اجرا", dockerImage: "تصویر Docker با SHA-256 ثابت",
+      reviewConsent: "کد این اجرا را شخصاً بررسی کرده‌ام و اجرای آزمایشی را مجاز می‌دانم.",
+      runReview: "اجرای آزمون محدود",
       controlPanelTitle: "مرکز کنترل پروژه", controlPanelSubtitle: "وضعیت اجرا، بازیابی، ارزیابی و تحویل براساس شواهد واقعی هسته.",
       refresh: "به‌روزرسانی", evidenceRoadmap: "نقشهٔ واقعی مراحل پروژه", noFakeProgress: "بدون درصد ساختگی",
       phaseDisclaimer: "هر مرحله فقط با شواهد معتبر پیش می‌رود؛ ایجاد تسک به معنی تأیید مستقل نیست.",
@@ -62,6 +67,11 @@
     },
     en: {
       execution: "Execution & Recovery", verification: "Tests & Gate", delivery: "Delivery & Evidence",
+      reviewTitle: "REVIEW-only evaluation",
+      reviewDescription: "Run only after manually reviewing the code and selecting an immutable Docker image. This cannot grant PASS or release.",
+      runIdLabel: "Run ID", dockerImage: "Docker image with pinned SHA-256",
+      reviewConsent: "I have reviewed this source and explicitly allow a reviewed-only measurement.",
+      runReview: "Run limited review",
       controlPanelTitle: "Project control center", controlPanelSubtitle: "Evidence-based execution, recovery, verification and delivery.",
       refresh: "Refresh", evidenceRoadmap: "Evidence-based project journey", noFakeProgress: "No invented progress",
       phaseDisclaimer: "A stage advances only with evidence; proposed code is not independent acceptance.",
