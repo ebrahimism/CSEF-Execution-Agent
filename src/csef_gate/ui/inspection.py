@@ -109,6 +109,8 @@ def inspection(book: ProjectBook) -> dict:
         run["can_resume_automatically"] = False
         run["resume_reason"] = "requires_trusted_reconciliation"
     planned = []
+    packages = []
+    accepted_run_ids = {run["id"] for run in runs if run["accepted_checkpoint"]}
     for row in changes:
         try:
             value = parse_json(row["proposal"])
@@ -116,12 +118,29 @@ def inspection(book: ProjectBook) -> dict:
             continue
         if not isinstance(value, dict):
             continue
+        if (row["status"] == "delivered" and value.get("type") == "verified_delivery"
+                and value.get("run_id") in accepted_run_ids
+                and value.get("owner_sha256") == owner["sha256"]
+                and isinstance(value.get("archive_sha256"), str)):
+            target = book.root / "deliveries" / (value["run_id"] + ".zip")
+            plain(target)
+            try:
+                if target.is_file() and target.stat().st_size <= 12_000_000:
+                    if digest(target.read_bytes()) == value["archive_sha256"]:
+                        packages.append({"run_id": value["run_id"],
+                                         "sha256": value["archive_sha256"],
+                                         "name": value["run_id"] + ".zip"})
+            except (OSError, ValueError):
+                pass
         if value.get("type") in ("factory_task", "factory_run"):
             planned.append({
                 "type": value["type"], "task_id": value.get("task_id"),
                 "run_id": value.get("run_id"), "status": row["status"],
                 "created": row["created"],
             })
+    for run in runs:
+        if any(p["run_id"] == run["id"] for p in packages):
+            run["delivery_package"] = "verified"
     call_rows = []
     for row in calls:
         receipt = None
@@ -161,8 +180,9 @@ def inspection(book: ProjectBook) -> dict:
         "task_execution": planned,
         "calls": call_rows,
         "provider_budget": budget,
-        "delivery": {"verified_package_count": None,
-                     "reason": "outside_control_store_without_package_receipt"},
+        "delivery": {"verified_package_count": len(packages),
+                     "packages": packages,
+                     "reason": "only registered, byte-verified Gate exports are counted"},
         "capabilities": {
             "S0": "partial", "S1": "partial", "S6a": "partial",
             "S2": "partial", "S3": "partial", "S4": "blocked",
