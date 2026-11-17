@@ -137,3 +137,35 @@ def ready_tasks(project: dict, proposal: dict, completed: list[str]) -> list[str
     # Never infer a completion from a checkbox or from the graph itself.
     return sorted(tid for tid, task in tasks.items()
                   if tid not in done and set(task["depends_on"]) <= done)
+
+
+def main(argv=None) -> int:
+    """Offline preview of a proposed graph for an existing owner ProjectBook."""
+    import argparse
+    import json
+    from pathlib import Path
+
+    from ..core import file_bytes, parse_json, plain
+    from ..project import ProjectBook
+
+    parser = argparse.ArgumentParser(description="Validate proposed CSEF task graph (no execution)")
+    parser.add_argument("--book", required=True, type=Path)
+    parser.add_argument("--graph", required=True, type=Path)
+    args = parser.parse_args(argv)
+    try:
+        plain(args.graph.absolute())
+        raw = args.graph.read_bytes()
+        if len(raw) > 512_000:
+            raise Refused("task graph file exceeds size limit")
+        proposal = parse_json(raw.decode("utf-8"))
+        result = validate_graph(ProjectBook(args.book).current(), proposal)
+    except (Refused, OSError, ValueError, UnicodeError) as exc:
+        print(json.dumps({"status": "refused", "release_approved": False,
+                          "reason": str(exc)}, ensure_ascii=False))
+        return 2
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

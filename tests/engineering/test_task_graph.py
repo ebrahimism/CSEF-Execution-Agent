@@ -95,3 +95,26 @@ def test_duplicate_test_ids_and_unowned_file_refused(example):
     graph["tasks"][0]["files"] = ["app/.secret"]
     with pytest.raises(Refused, match="reserved"):
         validate_graph(project, graph)
+
+
+def test_cli_reads_existing_owner_book_without_mutating_it(example, tmp_path, capsys):
+    import json
+    from csef_gate.engineering.task_graph import main
+    from csef_gate.project import ProjectBook
+
+    project, graph = example
+    book = ProjectBook.create(tmp_path / "book", project["goal"],
+                              project["answers"], project["facts"])
+    path = tmp_path / "graph.json"
+    path.write_text(json.dumps(graph), encoding="utf-8")
+    before = book.status()
+    assert main(["--book", str(book.root), "--graph", str(path)]) == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["ready"] == ["TASK-001"]
+    assert output["release_approved"] is False
+    assert book.status() == before
+    path.write_text('{"schema_version":1,"schema_version":1}', encoding="utf-8")
+    assert main(["--book", str(book.root), "--graph", str(path)]) == 2
+    refused = json.loads(capsys.readouterr().out)
+    assert refused["status"] == "refused" and refused["release_approved"] is False
+    assert book.status() == before
