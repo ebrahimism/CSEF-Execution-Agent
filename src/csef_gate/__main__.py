@@ -8,11 +8,16 @@ from pathlib import Path
 from .core import Gate, Refused, read_json
 
 
-def _executor(kind):
+def _executor(kind, *, measure_only=False, docker_image=None):
     if kind == "codex":
         from .backends import CodexSandbox
         return CodexSandbox()
-    raise Refused("choose an explicit trusted --executor; no unsandboxed host fallback")
+    if kind == "docker-reviewed":
+        if not measure_only:
+            raise Refused("Docker reviewed executor requires --measure-only")
+        from .execution.docker_reviewed import DockerReviewedExecutor
+        return DockerReviewedExecutor(image=docker_image)
+    raise Refused("choose an explicit --executor; no unsandboxed host fallback")
 
 
 def main(argv=None):
@@ -35,7 +40,8 @@ def main(argv=None):
             cmd.add_argument("--run-id", help="resume unaccepted run, persistent attempt budget")
         if name in ("evaluate", "run"):
             cmd.add_argument("--measure-only", action="store_true")
-            cmd.add_argument("--executor", choices=("codex",))
+            cmd.add_argument("--executor", choices=("codex", "docker-reviewed"))
+            cmd.add_argument("--docker-image", help="immutable image@sha256:digest for Docker reviewed mode")
         if name in ("run", "propose"):
             cmd.add_argument("--provider", choices=("openai", "anthropic", "codex"))
             cmd.add_argument("--model", help="required with direct APIs")
@@ -60,7 +66,7 @@ def main(argv=None):
                 gate.apply_proposal(args.run_id, read_json(args.proposal))
                 result = {"status": "prepared", "run_id": args.run_id}
             elif args.command == "evaluate":
-                result = gate.evaluate(args.run_id, _executor(args.executor), measure_only=args.measure_only)
+                result = gate.evaluate(args.run_id, _executor(args.executor, measure_only=args.measure_only, docker_image=args.docker_image), measure_only=args.measure_only)
             elif args.command == "accept":
                 result = {"status": "accepted", "checkpoint": gate.accept(args.run_id)}
             elif args.command == "propose":
@@ -70,7 +76,7 @@ def main(argv=None):
             else:
                 from .providers.direct import select_provider
                 _, agent = select_provider(args.provider, args.model)
-                executor = _executor(args.executor)
+                executor = _executor(args.executor, measure_only=args.measure_only, docker_image=args.docker_image)
                 def progress(report):
                     print(json.dumps({"run_id": report["run_id"], "evaluation_id": report["evaluation_id"], "status": report["status"], "passed": sum(c["passed"] for c in report["cases"]), "total": len(report["cases"]), "error": report["error"]}), file=sys.stderr, flush=True)
                 result = gate.run(executor, agent, args.run_id, progress, measure_only=args.measure_only)

@@ -23,8 +23,9 @@ def configure(sub):
             command.add_argument("--measure-only", action="store_true")
             command.add_argument("--provider", choices=("openai", "anthropic", "codex"))
             command.add_argument("--model", help="required for direct APIs; no model is chosen implicitly")
-            command.add_argument("--executor", choices=("codex",),
-                                 help="explicit trusted execution adapter; omitted for document-only steps")
+            command.add_argument("--executor", choices=("codex", "docker-reviewed"),
+                                 help="explicit execution adapter; Docker reviewed requires --measure-only")
+            command.add_argument("--docker-image", help="immutable image@sha256:digest for Docker reviewed mode")
 
 
 def execute(args):
@@ -48,6 +49,11 @@ def execute(args):
     if args.executor == "codex":
         from ..backends import CodexSandbox
         executor = CodexSandbox()
+    elif args.executor == "docker-reviewed":
+        if not args.measure_only:
+            raise Refused("Docker reviewed executor requires --measure-only")
+        from ..execution.docker_reviewed import DockerReviewedExecutor
+        executor = DockerReviewedExecutor(image=args.docker_image)
     if stage["position"] >= 3 and executor is None:
         raise Refused("coding evaluation requires --executor; no unsafe host fallback")
     # The controller will also refuse at a later coding stage if no executor exists.
