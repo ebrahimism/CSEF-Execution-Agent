@@ -6,7 +6,9 @@
   <meta name="color-scheme" content="dark">
   <title>CSEF — Execution Studio</title>
   <link rel="stylesheet" href="/app.css">
+  <link rel="stylesheet" href="/operations.css">
   <script src="/app.js" defer></script>
+  <script src="/operations.js" defer></script>
 </head>
 <body>
   <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg">
@@ -39,6 +41,9 @@
         <button type="button" class="nav-link" data-target="projects"><svg><use href="#i-layer"/></svg><span data-i18n="projects">پروژه‌ها</span><span class="nav-count" id="nav-projects">0</span></button>
         <button type="button" class="nav-link" data-target="graph"><svg><use href="#i-nodes"/></svg><span data-i18n="taskGraph">گراف وظایف</span></button>
         <button type="button" class="nav-link" data-target="activity"><svg><use href="#i-activity"/></svg><span data-i18n="activity">فعالیت‌ها</span></button>
+        <button type="button" class="nav-link" data-target="operations"><svg><use href="#i-code"/></svg><span data-i18n="execution">اجرا و بازیابی</span></button>
+        <button type="button" class="nav-link" data-target="verification"><svg><use href="#i-shield"/></svg><span data-i18n="verification">آزمون و Gate</span></button>
+        <button type="button" class="nav-link" data-target="deliveries"><svg><use href="#i-doc"/></svg><span data-i18n="delivery">تحویل و شواهد</span></button>
       </nav>
       <p class="menu-caption second-menu" data-i18n="system">سیستم</p>
       <nav class="primary-nav" aria-label="System">
@@ -143,6 +148,58 @@
             <div class="insight-rule"></div>
             <div class="security-banner"><svg><use href="#i-shield"/></svg><div><strong data-i18n="gateEnforced">Gate مستقل فعال در هسته</strong><p data-i18n="gateExplanation">این داشبورد مجوز PASS، اجرای ناامن یا استقرار صادر نمی‌کند.</p></div></div>
             <div class="insight-footer"><span data-i18n="uiMode">حالت رابط</span><strong>S6a · Local</strong></div>
+          </section>
+        </div>
+        <section class="ops-intro" id="operations" aria-label="Project operations">
+          <div>
+            <p class="section-overline">PROJECT CONTROL PLANE</p>
+            <h2 data-i18n="controlPanelTitle">مرکز کنترل پروژه</h2>
+            <p data-i18n="controlPanelSubtitle">وضعیت اجرا، بازیابی، ارزیابی و تحویل بر اساس شواهد واقعی هسته.</p>
+          </div>
+          <div class="ops-intro-actions">
+            <span id="control-project-pill" class="control-project-pill">—</span>
+            <button id="refresh-evidence" type="button" class="outline-button"><svg><use href="#i-activity"/></svg><span data-i18n="refresh">به‌روزرسانی</span></button>
+          </div>
+        </section>
+        <section class="phase-panel panel" aria-label="Evidence based phases">
+          <div class="panel-header"><div><p class="section-overline">S0—S7 / PROJECT JOURNEY</p><h3 data-i18n="evidenceRoadmap">نقشهٔ واقعی مراحل پروژه</h3></div><span class="small-counter" data-i18n="noFakeProgress">بدون درصد ساختگی</span></div>
+          <div id="project-journey" class="journey-strip" aria-live="polite"></div>
+          <p class="panel-note" data-i18n="phaseDisclaimer">مرحلهٔ سبز فقط وقتی شواهد کافی دارد نمایش داده می‌شود. ایجاد تسک به معنی اجرای موفق نیست.</p>
+        </section>
+        <div class="ops-grid">
+          <section class="panel operation-panel" aria-labelledby="run-heading">
+            <div class="panel-header"><div><p class="section-overline">EXECUTION / S3</p><h3 id="run-heading" data-i18n="executionRecovery">اجرا و بازیابی</h3></div><span id="runs-counter" class="small-counter">—</span></div>
+            <div id="runs-list" class="structured-list" aria-live="polite"></div>
+            <div id="recovery-warning" class="ops-advice"></div>
+          </section>
+          <section class="panel operation-panel" id="verification" aria-labelledby="verification-heading">
+            <div class="panel-header"><div><p class="section-overline">INDEPENDENT GATE / S4</p><h3 id="verification-heading" data-i18n="testCenter">آزمون و ارزیابی مستقل</h3></div><span id="tests-counter" class="small-counter">—</span></div>
+            <div id="gate-integrity" class="integrity-header"></div>
+            <div id="test-results" class="structured-list"></div>
+            <div class="ops-advice" data-i18n="gateAuthorityReminder">داشبورد حق ساخت PASS، تغییر معیارهای منجمد یا اجرای کد نامطمئن را ندارد.</div>
+          </section>
+          <section class="panel operation-panel" id="deliveries" aria-labelledby="delivery-heading">
+            <div class="panel-header"><div><p class="section-overline">DELIVERY / S5 + S7</p><h3 id="delivery-heading" data-i18n="deliveryCenter">تحویل و شواهد</h3></div><span class="small-counter" data-i18n="gated">وابسته به Gate</span></div>
+            <div id="delivery-content" class="structured-list"></div>
+            <div class="ops-advice" data-i18n="deliveryDisclaimer">بستهٔ نصب واقعی و اثبات S7 تنها پس از پذیرش مستقل و نصب آزمایشی قابل ادعا هستند.</div>
+          </section>
+        </div>
+        <div class="ops-grid lower-ops">
+          <section class="panel operation-panel" aria-labelledby="requirements-heading">
+            <div class="panel-header"><div><p class="section-overline">OWNER CONTROL / S0 + S1</p><h3 id="requirements-heading" data-i18n="ownerDecisionsTitle">نیازمندی‌ها و تصمیم‌های مالک</h3></div><span id="owner-version" class="small-counter">—</span></div>
+            <div id="owner-facts" class="structured-list"></div>
+            <form id="owner-answers-form" class="owner-form" aria-label="Answer unresolved owner questions">
+              <div id="owner-answers-fields" class="owner-fields"></div>
+              <label for="owner-reason" data-i18n="changeReason">دلیل تغییر و پاسخ</label>
+              <input id="owner-reason" required maxlength="400" data-placeholder="changeReasonHint" placeholder="تکمیل پاسخ‌های ضروری مالک">
+              <button type="submit" id="save-owner-answers" class="primary-button"><svg><use href="#i-check"/></svg><span data-i18n="saveOwnerAnswers">ثبت نسخهٔ جدید پاسخ‌ها</span></button>
+            </form>
+          </section>
+          <section class="panel operation-panel" aria-labelledby="audit-heading">
+            <div class="panel-header"><div><p class="section-overline">AUDIT / S0 + S2</p><h3 id="audit-heading" data-i18n="auditProviders">حسابرسی و مصرف API</h3></div><span id="audit-count" class="small-counter">—</span></div>
+            <div id="provider-budget" class="budget-overview"></div>
+            <div class="inset-heading" data-i18n="recentChanges">آخرین رویدادها</div>
+            <div id="audit-events" class="structured-list"></div>
           </section>
         </div>
         <footer class="page-footer"><span>© CSEF Execution Studio</span><span data-i18n="privacyFoot">Private by design · Local only</span></footer>
