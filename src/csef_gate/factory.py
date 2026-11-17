@@ -306,6 +306,12 @@ def _delivery(book: ProjectBook, gate: Gate, run_id: str, output: Path) -> dict:
         raise Refused("source snapshot was modified after verification")
     if manifest(gate.candidate(run_id), spec["source_files"])[0] != checkpoint["source_hash"]:
         raise Refused("candidate drift after acceptance")
+    # Bind the ZIP to the exact bytes read, not merely to an earlier
+    # filesystem check: concurrent file mutation cannot produce a mixed bundle.
+    source_data = {name: file_bytes(snapshot, name) for name in sorted(spec["source_files"])}
+    observed = digest(encoded({name: digest(data) for name, data in source_data.items()}))
+    if observed != checkpoint["source_hash"]:
+        raise Refused("source bytes changed while preparing delivery")
     output = Path(output).absolute()
     plain(output)
     if output.exists():
@@ -327,8 +333,8 @@ def _delivery(book: ProjectBook, gate: Gate, run_id: str, output: Path) -> dict:
     temp = output.with_name(output.name + "." + uuid.uuid4().hex + ".pending")
     try:
         with zipfile.ZipFile(temp, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-            for name in sorted(spec["source_files"]):
-                archive.writestr("source/" + relative_name(name), file_bytes(snapshot, name))
+            for name, content in source_data.items():
+                archive.writestr("source/" + relative_name(name), content)
             archive.writestr("manifest.json", encoded(manifest_data))
             archive.writestr("README.txt", readme)
         os.replace(temp, output)
