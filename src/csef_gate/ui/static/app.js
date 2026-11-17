@@ -121,7 +121,7 @@
     quotaRemaining:"درخواست باقی‌مانده",unknownCost:"هزینهٔ دلاری نامعلوم",
     verificationSummary:"خلاصهٔ آزمون‌ها",passedCases:"موفق",failedCases:"ناموفق",
     blockedAction:"عملیات اجرایی تا تأیید مرز ایزوله غیرفعال است.",
-    noProjectInspection:"برای نمایش شواهد یک پروژه انتخاب کنید."
+    blockedStage:"مسدود",noProjectInspection:"برای نمایش شواهد یک پروژه انتخاب کنید."
   });
   Object.assign(words.en, {
     executionCenter:"Execution monitor",verificationCenter:"Verification & Gate",
@@ -147,7 +147,7 @@
     quotaRemaining:"Requests remaining",unknownCost:"USD cost unknown",
     verificationSummary:"Test case summary",passedCases:"Passed",failedCases:"Failed",
     blockedAction:"Execution controls remain disabled until isolation is verified.",
-    noProjectInspection:"Select a project to inspect its evidence."
+    blockedStage:"Blocked",noProjectInspection:"Select a project to inspect its evidence."
   });
   const $ = id => document.getElementById(id);
   const state = {
@@ -254,7 +254,7 @@
       const item=make("div","roadmap-item");
       item.append(make("span","roadmap-number",p.id.slice(1)),
         make("span","roadmap-name",tr(p.name)),
-        make("span","roadmap-state "+p.state,tr(p.state==="partial"?"partial":p.state==="prototype"?"prototype":"notVerified")));
+        make("span","roadmap-state "+p.state,tr(p.state==="partial"?"partial":p.state==="prototype"?"prototype":p.state==="blocked"?"blockedStage":"notVerified")));
       wrap.append(item);
     });
   }
