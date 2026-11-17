@@ -74,12 +74,14 @@ def export_accepted(book: ProjectBook, run_id: str, payload: dict) -> dict:
         raise Refused("delivery exceeded configured size limit")
     archive_sha = digest(data)
     # Record package proof in the existing owner/control transaction.
+    # Resolve owner revision BEFORE acquiring a SQLite write transaction.
+    owner_sha = book.current()["sha256"]
     with book.connection() as con:
         con.execute("BEGIN IMMEDIATE")
         con.execute("INSERT INTO changes(proposal,status,created) VALUES(?,?,?)",
                     (encoded({"type": "verified_delivery", "run_id": run_id,
                               "archive_sha256": archive_sha,
-                              "owner_sha256": book.current()["sha256"]}).decode(),
+                              "owner_sha256": owner_sha}).decode(),
                      "delivered", now()))
     return {"status": result["status"], "run_id": run_id,
             "archive_sha256": archive_sha, "file_name": run_id + ".zip",
