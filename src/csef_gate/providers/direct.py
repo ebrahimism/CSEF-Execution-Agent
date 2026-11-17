@@ -16,6 +16,7 @@ from jsonschema import Draft202012Validator, ValidationError, SchemaError
 
 from ..backends import PROPOSAL_SCHEMA
 from ..core import Refused, digest, encoded, parse_json, relative_name
+from . import usage as provider_usage
 
 MAX_RESPONSE = 1_000_000
 ENDPOINTS = {
@@ -220,6 +221,8 @@ class DirectAPI:
                 "output_config": {"format": {"type": "json_schema", "schema": native_schema}}}
             headers = {"x-api-key": self.api_key, "anthropic-version": "2023-06-01"}
         started = time.monotonic()
+        # Reserve durable intent before contacting either billable API.
+        row_id = provider_usage.reserve(control, self.provider, self.model, role)
         try:
             response = self._send(self.endpoint, headers, payload, timeout)
             if not isinstance(response, dict):
@@ -229,8 +232,15 @@ class DirectAPI:
             if not isinstance(value, dict):
                 raise Refused("provider output is not a JSON object")
             Draft202012Validator(schema).validate(value)
+            estimated = provider_usage.estimate(self.provider, self.model, usage)
         except (ValidationError, ValueError, TypeError, UnicodeError):
+            provider_usage.settle(control, row_id, completed=False)
             raise Refused("provider output failed strict JSON schema validation") from None
+        except BaseException:
+            # Treat all interrupted/failed outcomes as unknown for quota accounting.
+            provider_usage.settle(control, row_id, completed=False)
+            raise
+        provider_usage.settle(control, row_id, completed=True)
         receipt = {
             "contract_version": 1, "adapter": self.provider + "-direct",
             "provider": self.provider, "model": self.model,
@@ -241,6 +251,8 @@ class DirectAPI:
             "format_contract": "native_json_schema_v1",
             "elapsed_s": round(time.monotonic() - started, 3),
             "usage": usage, "cost_usd": None,
+            "cost_estimate_usd": estimated, "pricing_origin":
+                "owner_provided_versioned_file" if estimated is not None else None,
             "cost_note": "Token usage only; no price or USD savings inferred.",
             "exit_code": 0, "outcome": "completed",
         }
