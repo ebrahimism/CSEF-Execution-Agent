@@ -19,6 +19,7 @@ from ..core import Refused, encoded, parse_json, plain
 from ..engineering.task_graph import validate_graph
 from ..factory import create_brief, plan_brief
 from ..project import ProjectBook, QUESTIONS
+from .inspection import inspect
 
 SLUG = re.compile(r"[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?\Z")
 MAX_BODY = 24_000
@@ -151,6 +152,48 @@ class DashboardService:
             "note": "Project plans are proposals; no live API, isolation or release is asserted.",
         }
 
+    def control(self, slug: str) -> dict:
+        """Read-only projection of independent Gate and existing project evidence."""
+        book = ProjectBook(self._directory(slug))
+        owner = book.current()
+        proposal = self._latest_plan(book, owner)
+        return inspect(book, proposal)
+
+    def answer(self, slug: str, payload: dict) -> dict:
+        """Owner-authored amendment, with optimistic version checked under DB lock.
+
+        The browser never writes ProjectBook SQL or changes Gate verdicts.
+        """
+        if (not isinstance(payload, dict)
+                or set(payload) != {"expected_version", "reason", "answers"}
+                or type(payload["expected_version"]) is not int
+                or not isinstance(payload["reason"], str)
+                or not 3 <= len(payload["reason"].strip()) <= 400
+                or not isinstance(payload["answers"], dict)
+                or not payload["answers"] or len(payload["answers"]) > 4):
+            raise Refused("valid owner revision, reason and answers required")
+        answers = payload["answers"]
+        if not set(answers) <= set(QUESTIONS):
+            raise Refused("unsupported intake answer identifier")
+        if any(not isinstance(v, str) or not 1 <= len(v.strip()) <= 2000
+               for v in answers.values()):
+            raise Refused("nonempty bounded owner answers required")
+        book = ProjectBook(self._directory(slug))
+        with book.connection() as con:
+            con.execute("BEGIN IMMEDIATE")
+            before = book.current(con=con)
+            if before["version"] != payload["expected_version"]:
+                raise Refused("stale owner revision: refresh before editing")
+            # Existing trusted owner operation; produces a versioned revision
+            # and invalidates previously proposed task graphs automatically.
+            book._amend_in(
+                con, answers=answers, reason=payload["reason"].strip(),
+                source={"kind": "owner_controller", "ref": "local_dashboard"}
+            )
+        return {"status": "owner_updated",
+                "project_version": book.current()["version"],
+                "release_approved": False}
+
     def create(self, payload: dict) -> dict:
         if not isinstance(payload, dict) or set(payload) - {"slug", "brief", "answers"}:
             raise Refused("invalid project fields")
@@ -237,9 +280,11 @@ def make_handler(service: DashboardService, token: str):
                 return "overview", ()
             if parsed.path == "/api/projects":
                 return "projects", ()
-            m = re.fullmatch(r"/api/projects/([a-z0-9-]{1,48})(?:/(plan))?", parsed.path)
+            m = re.fullmatch(
+                r"/api/projects/([a-z0-9-]{1,48})(?:/(plan|control|answers))?",
+                parsed.path)
             if m:
-                return "plan" if m.group(2) else "project", (m.group(1),)
+                return m.group(2) or "project", (m.group(1),)
             raise Refused("unknown route")
 
         def do_GET(self):
@@ -260,6 +305,8 @@ def make_handler(service: DashboardService, token: str):
                     return self._send(HTTPStatus.OK, {"projects": service.projects()})
                 if route == "project":
                     return self._send(HTTPStatus.OK, service.project(arguments[0]))
+                if route == "control":
+                    return self._send(HTTPStatus.OK, service.control(arguments[0]))
                 return self._send(HTTPStatus.NOT_FOUND, {"error": "unknown route"})
             except (Refused, OSError, ValueError, KeyError) as error:
                 return self._send(HTTPStatus.BAD_REQUEST, {"error": str(error)})
@@ -271,7 +318,7 @@ def make_handler(service: DashboardService, token: str):
                 return self._send(HTTPStatus.FORBIDDEN, {"error": "invalid csrf token"})
             try:
                 route, arguments = self._route()
-                if route not in ("projects", "plan"):
+                if route not in ("projects", "plan", "answers"):
                     return self._send(HTTPStatus.NOT_FOUND, {"error": "unknown route"})
                 if self.headers.get("Content-Type", "").split(";")[0] != "application/json":
                     raise Refused("JSON body required")
@@ -281,6 +328,8 @@ def make_handler(service: DashboardService, token: str):
                 payload = parse_json(self.rfile.read(int(length)).decode("utf-8"))
                 if route == "projects":
                     return self._send(HTTPStatus.CREATED, service.create(payload))
+                if route == "answers":
+                    return self._send(HTTPStatus.OK, service.answer(arguments[0], payload))
                 return self._send(HTTPStatus.OK, service.generate_plan(arguments[0], payload))
             except (Refused, ValueError, UnicodeError, OSError, KeyError, TypeError) as error:
                 # Errors may include user-controlled paths but never provider key/header data.
