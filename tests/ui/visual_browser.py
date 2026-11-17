@@ -12,7 +12,7 @@ import threading
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 from csef_gate.factory import create_brief, plan_brief
 from csef_gate.ui.server import DashboardService, make_handler
@@ -101,7 +101,7 @@ def main():
                             page.locator("#project-slug").fill("new-project")
                             page.locator("#brief").fill("A second project")
                             page.locator("#new-project-form button[type=submit]").click()
-                            page.wait_for_function("document.querySelector('#stat-projects').textContent.trim() === '2'", timeout=10000)
+                            expect(page.locator("#stat-projects")).to_have_text("2", timeout=10000)
                             assert page.locator("#stat-projects").inner_text().strip() == "2"
                         context.close()
                 browser.close()
