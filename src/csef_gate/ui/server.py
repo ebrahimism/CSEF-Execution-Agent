@@ -100,6 +100,7 @@ class DashboardService:
             tasks = proposal["graph"]["tasks"]
             return {
                 "state": "needs_owner" if proposal.get("questions") else "proposed",
+                "graph_sha256": result["proposal_sha256"],
                 "task_count": result["task_count"],
                 "ready": result["ready"],
                 "questions": proposal.get("questions") or [],

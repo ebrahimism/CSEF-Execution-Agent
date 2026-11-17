@@ -67,6 +67,8 @@ def _report(book, row, expected_spec_hash):
             "passed": sum(int(c["passed"]) for c in cases),
             "total": len(cases),
             "finished_at": report.get("finished_at"),
+            "owner_sha256": report.get("project_sha256"),
+            "owner_version": report.get("project_version"),
             "error_present": report.get("error") is not None,
         }
     except (Refused, OSError, UnicodeError, TypeError, ValueError, KeyError):
@@ -127,6 +129,8 @@ def _gate_state(book, con):
             and ev["status"] == "pass" and ev["measurement_only"] is False
             and ev["boundary_verified"] is True and ev["total"] == len(tests)
             and ev["passed"] == len(tests) and cp["spec_hash"] == spec_sha
+            and ev.get("owner_sha256") == book.current()["sha256"]
+            and ev.get("owner_version") == book.current()["version"]
             and cp["report_hash"] == next((e["report_hash"] for e in evaluated
                                             if e["id"] == cp["evaluation_id"]), None)
             and cp["source_hash"] == next((e["source_hash"] for e in evaluated
@@ -204,7 +208,24 @@ def _task_progress(book, plan, events, gate):
     if not plan or not isinstance(plan, dict) or plan.get("state") not in ("proposed", "needs_owner"):
         return []
     task_ids = {task["id"] for task in plan.get("tasks", [])}
-    candidates = {run["id"] for run in gate.get("runs", [])}
+    current_graph = plan.get("graph_sha256")
+    owner = book.current()
+    candidates = set()
+    # Bind task evidence to precisely this owner revision and graph, never a
+    # prior unrelated run that reused TASK-001 or other proposed task IDs.
+    with book.connection() as con:
+        rows = con.execute("SELECT proposal FROM changes WHERE status='recorded' "
+                           "ORDER BY id DESC LIMIT 300").fetchall()
+    for row in rows:
+        try:
+            value = parse_json(row["proposal"])
+        except (Refused, TypeError, ValueError):
+            continue
+        if (isinstance(value, dict) and value.get("type") == "factory_run"
+                and value.get("graph_sha256") == current_graph
+                and value.get("owner_sha256") == owner["sha256"]
+                and any(run["id"] == value.get("run_id") for run in gate.get("runs", []))):
+            candidates.add(value["run_id"])
     with book.connection() as con:
         records = con.execute(
             "SELECT proposal,status FROM changes WHERE status IN ('factory_running','factory_done') "
