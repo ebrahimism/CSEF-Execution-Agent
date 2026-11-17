@@ -10,7 +10,7 @@ def configure(sub):
     init.add_argument("--root", type=Path, required=True)
     init.add_argument("--goal", required=True)
     init.add_argument("--brief", type=Path, help="optional owner answers and stable facts JSON")
-    for name in ("status", "questions", "packet", "answer", "review", "assist", "route"):
+    for name in ("status", "questions", "packet", "answer", "review", "assist", "route", "plan", "plan-status"):
         p = commands.add_parser(name)
         p.add_argument("--root", type=Path, required=True)
         if name == "packet":
@@ -22,6 +22,11 @@ def configure(sub):
             p.add_argument("--model", help="required for direct APIs")
         if name == "review":
             p.add_argument("--proposal", type=Path, required=True)
+        if name == "plan":
+            p.add_argument("--proposal", type=Path, help="existing task-graph JSON to validate without model")
+            p.add_argument("--provider", choices=("openai", "anthropic", "codex"))
+            p.add_argument("--model", help="required for direct API planning")
+            p.add_argument("--version", type=int, help="expected current owner revision")
         if name == "route":
             p.add_argument("--stage", required=True)
             p.add_argument("--signal", action="append", default=[])
@@ -45,6 +50,22 @@ def execute(args):
         return book.status()
     if args.project_command == "questions":
         return {"questions": book.questions()}
+    if args.project_command == "plan-status":
+        from .engineering.task_graph import latest_graph
+        return latest_graph(book)
+    if args.project_command == "plan":
+        from .engineering.task_graph import propose_graph, generate_graph
+        if args.proposal is not None:
+            if args.provider is not None or args.model is not None:
+                raise Refused("choose a local proposal OR a model provider, not both")
+            return propose_graph(book, read_json(args.proposal), expected_version=args.version)
+        if args.version is not None and args.version != book.current()["version"]:
+            raise Refused("planning request references a stale owner revision")
+        if args.provider is None:
+            raise Refused("plan needs --proposal or an explicit --provider and --model")
+        from .providers.direct import select_provider
+        client, _ = select_provider(args.provider, args.model)
+        return generate_graph(book, client)
     if args.project_command == "packet":
         return book.context(args.stage) if args.inline else book.packet(args.stage)
     if args.project_command in ("review", "assist"):
