@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-17",
+  "source": {
+    "repository": "ebrahimism/CSEF-Execution-Agent",
+    "base_commit": "4a2faf21330959e68b17b6253003294d489bb1b0",
+    "backlog": "docs/roadmap/backlog.json",
+    "task_count": 38
+  },
+  "status": "proposed_architecture_only",
+  "historical_evidence_only": [
+    "T001",
+    "T002",
+    "T003",
+    "T004",
+    "T005",
+    "T006",
+    "T007"
+  ],
+  "already_observed_capabilities_not_mapped_as_done": [
+    "Spec Kit proposal-only exchange",
+    "OpenAI Responses scripted adapter tests",
+    "Anthropic Messages scripted adapter tests",
+    "opt-in live smoke tool (live run not verified)",
+    "Docker reviewed-only executor: cannot grant PASS",
+    "GitHub Actions regression: 260 passed on 2026-11-17"
+  ],
+  "stages": [
+    {
+      "id": "S0",
+      "title": "تثبیت واقعیات و هدف مالک",
+      "task_ids": [
+        "T001",
+        "T002",
+        "T003",
+        "T004",
+        "T005",
+        "T006",
+        "T007"
+      ],
+      "depends_on": [],
+      "deliverables": [
+        "فهرست آزمون‌ها و شواهد در نسخهٔ مقصد",
+        "ثبت اولویت جدید مالک با سازوکار نسخه‌دار",
+        "بررسی گردش کار Spec Kit بدون ساخت موتور دوباره"
+      ],
+      "gate": [
+        "آزمون مخزن در CI موفق بماند",
+        "تعارض وضعیت backlog با رسیدهای قبلی آشکار و مستند شود",
+        "T001–T007 تنها با شواهد برش نمونهٔ اولیه پذیرفته شوند؛ محصول کامل ادعا نشود"
+      ]
+    },
+    {
+      "id": "S1",
+      "title": "شرح‌حال تا معماری و گراف وظایف پروژهٔ کاربر",
+      "task_ids": [
+        "T009",
+        "T010",
+        "T011",
+        "T012"
+      ],
+      "depends_on": [
+        "S0"
+      ],
+      "deliverables": [
+        "نیازمندی و تصمیم نسخه‌دار",
+        "معماری و spec/plan/tasks با Spec Kit موجود",
+        "گراف وابستگی قابل آزمون با پیوند نیاز→تسک→آزمون"
+      ],
+      "gate": [
+        "هر نیاز پذیرفته‌شده حداقل یک مسیر پیگیری تا معیار پذیرش داشته باشد",
+        "گراف بدون چرخه و بدون تسک فاقد ورودی/خروجی/معیار باشد",
+        "ابهام مؤثر به سؤال محدود تبدیل شود و نیاز کاربر بی‌صدا تغییر نکند"
+      ]
+    },
+    {
+      "id": "S2",
+      "title": "دو مدل مستقل و کنترل مصرف",
+      "task_ids": [
+        "T013",
+        "T014",
+        "T015",
+        "T016",
+        "T017"
+      ],
+      "depends_on": [
+        "S0"
+      ],
+      "deliverables": [
+        "تأیید دو API موجود با درخواست واقعی مالک",
+        "ثبت usage و خطا/timeout/قابلیت مدل",
+        "سقف هزینه و عدم تلاش مجدد نامعلوم"
+      ],
+      "gate": [
+        "تست آفلاین دو آداپتر و آزمایش زندهٔ اختیاری با کلید مالک",
+        "عدم نشت کلید و عدم fallback بدون اجازه",
+        "هیچ هزینهٔ نامعلوم به عنوان صفر گزارش نشود",
+        "T017 اختیاری و فقط پس از نیاز واقعی"
+      ]
+    },
+    {
+      "id": "S3",
+      "title": "تولید کد نسخه‌بسته و بازیابی",
+      "task_ids": [
+        "T008",
+        "T018",
+        "T019",
+        "T020"
+      ],
+      "depends_on": [
+        "S1",
+        "S2"
+      ],
+      "deliverables": [
+        "تسک محدود به نسخه و فایل‌های مجاز",
+        "candidate worktree جدا با diff و rollback محدود",
+        "recovery برای قطع API، تغییر فایل و اجرای آزمون"
+      ],
+      "gate": [
+        "نسخهٔ کهنه و فایل خارج محدوده رد شوند",
+        "عمل نامعلوم غیرقابل‌بازگشت بدون reconciliation دوباره اجرا نشود",
+        "با تعویض مدل، هدف و معیارهای مستقل ثابت بمانند"
+      ]
+    },
+    {
+      "id": "S4",
+      "title": "ایزوله‌سازی و داوری مستقل",
+      "task_ids": [
+        "T021",
+        "T022",
+        "T023",
+        "T024",
+        "T025",
+        "T026",
+        "T027",
+        "T028"
+      ],
+      "depends_on": [
+        "S3"
+      ],
+      "deliverables": [
+        "ExecutionProvider مبتنی بر guest مجزا یا گزینهٔ امنِ واقعاً آزموده‌شده",
+        "کنترل انتقال فایل و حمله‌های مسیر/شبکه",
+        "Gate و verifier با شواهد معتبر و آزمون پروژهٔ واقعی"
+      ],
+      "gate": [
+        "اجرای کد نامطمئن خارج از میزبان/کنترل‌پلین با شواهد محیطی مستقل انجام شود",
+        "بدون VM آزموده‌شده هیچ PASS یا checkpoint صادر نشود",
+        "آزمون نفوذ به معیار/سیاست/کلید و قطع guest پاس شود",
+        "تغییر جزئی کد حفاظت آزمون را کم نکند"
+      ]
+    },
+    {
+      "id": "S5",
+      "title": "یکپارچه‌سازی و بستهٔ تحویل",
+      "task_ids": [
+        "T031",
+        "T032",
+        "T033",
+        "T034"
+      ],
+      "depends_on": [
+        "S4"
+      ],
+      "deliverables": [
+        "اتصال محدود GitHub و PR قابل بازبینی",
+        "ساخت پروژه نمونه و آزمون واحد/یکپارچه/مرورگر",
+        "بستهٔ نصب، بازیابی، مستندات و لاگ امن"
+      ],
+      "gate": [
+        "برنامه با نصب تمیز واقعاً اجرا شود",
+        "backup و restore با دادهٔ واقعی نمونه آزمایش شود",
+        "هیچ داده/کلید محرمانه در artifact یا PR وارد نشود"
+      ]
+    },
+    {
+      "id": "S6",
+      "title": "رابط شخصی و کنترل روند",
+      "task_ids": [
+        "T029",
+        "T030"
+      ],
+      "depends_on": [
+        "S4"
+      ],
+      "deliverables": [
+        "یک سرویس کاربردی برای CLI و اتصال چت/رابط محلی",
+        "داشبورد فارسی برای پروژه، تسک، سؤال، نتیجهٔ آزمون و خطا"
+      ],
+      "gate": [
+        "UI صرفاً نمایش و کنترل مجاز است، نه منبع اختیار دیگر",
+        "همان گردش کار از CLI و UI رفتار یکسان داشته باشد",
+        "نیازی به React/خدمات یا پایگاه دوم بدون دلیل نباشد"
+      ]
+    },
+    {
+      "id": "S7",
+      "title": "آزمون محصول واقعی و بسته‌بندی نهایی",
+      "task_ids": [
+        "T035",
+        "T036",
+        "T037",
+        "T038"
+      ],
+      "depends_on": [
+        "S5",
+        "S6"
+      ],
+      "deliverables": [
+        "پروژه واقعی از شرح‌حال ساده تا محصول عملی",
+        "آزمون تغییر خواسته پس از نسخهٔ اول",
+        "پکیج نصب Windows/Ubuntu و گزارش هزینه/خطا/مداخله"
+      ],
+      "gate": [
+        "خروجی پروژه مستقل از چت قابل نصب، اجرا و آزمون باشد",
+        "نیازهای پذیرفته‌شده با شاهد پوشش داده شوند",
+        "با تغییر نیاز قابلیت قبلی بدون تأیید خراب نشود",
+        "T037 و T038 فقط در صورت نیاز و اثبات سود ادغام شوند"
+      ]
+    }
+  ],
+  "implementation_rules": [
+    "Only this repository; no edits to csef-builder or unrelated projects",
+    "Protected core, no duplicate planner, SQLite retained",
+    "No model may approve its own code or override acceptance",
+    "Do not mistake document-completion for user-project success",
+    "No paid API or deployment without separate authorization",
+    "Stage exit is evidence-based; parallel execution only for independent ready tasks"
+  ],
+  "live_api_validation": "not_verified_with_owner_credentials",
+  "guest_execution_validation": "not_verified",
+  "user_project_end_to_end": "not_verified"
+}
