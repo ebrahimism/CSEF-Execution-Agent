@@ -148,6 +148,7 @@
     $("today-label").textContent=new Intl.DateTimeFormat(lang==="fa"?"fa-IR":"en-GB",{dateStyle:"medium"}).format(new Date());
     if(state.overview)renderOverview();
     renderGraph();
+    window.dispatchEvent(new CustomEvent("csef:language",{detail:{lang}}));
   }
   async function load() {
     try {
@@ -157,7 +158,8 @@
       if(!state.selected&&state.projects.length)state.selected=state.projects[0].slug;
       renderOverview();
       if(state.selected)await selectProject(state.selected,false);
-      else {state.current=null;renderGraph();}
+      else {state.current=null;renderGraph();
+        window.dispatchEvent(new CustomEvent("csef:project",{detail:{slug:null,project:null,csrf:state.csrf}}));}
     }catch(err){toast(tr("errorPrefix")+err.message,true);}
   }
   function renderOverview() {
@@ -216,7 +218,9 @@
     $("generate-plan").disabled=false;renderProjects();
     try {
       state.current=await request("/api/projects/"+encodeURIComponent(slug));
-      renderGraph();if(scroll)$("graph").scrollIntoView({behavior:"smooth",block:"start"});
+      renderGraph();
+      window.dispatchEvent(new CustomEvent("csef:project",{detail:{slug,project:state.current,csrf:state.csrf}}));
+      if(scroll)$("graph").scrollIntoView({behavior:"smooth",block:"start"});
     }catch(err){state.current=null;renderGraph();toast(tr("errorPrefix")+err.message,true);}
   }
   function renderGraph() {
@@ -314,12 +318,22 @@
     $("project-filter").addEventListener("input",renderProjects);
     $("project-select").addEventListener("change",event=>{
       if(event.target.value)selectProject(event.target.value,false);
-      else{state.selected=null;state.current=null;renderProjects();renderGraph();$("generate-plan").disabled=true;}
+      else{state.selected=null;state.current=null;renderProjects();renderGraph();$("generate-plan").disabled=true;
+        window.dispatchEvent(new CustomEvent("csef:project",{detail:{slug:null,project:null,csrf:state.csrf}}));}
     });
     $("generate-plan").addEventListener("click",()=>{if(state.selected)$("plan-dialog").showModal();});
     $("close-plan").addEventListener("click",()=>$("plan-dialog").close());
     $("cancel-plan").addEventListener("click",()=>$("plan-dialog").close());
     $("plan-form").addEventListener("submit",plan);
+    window.addEventListener("csef:refresh",()=>load());
+    window.addEventListener("csef:control",event=>{
+      const data=event.detail, progress=new Map((data.task_progress||[]).map(x=>[x.id,x]));
+      document.querySelectorAll(".graph-node").forEach(el=>{
+        const item=progress.get(el.dataset.taskId);
+        el.classList.toggle("coded-unverified", Boolean(item && item.status==="coded_unverified"));
+        el.classList.toggle("coding-unknown",Boolean(item && item.status==="unknown"));
+      });
+    });
     window.addEventListener("resize",()=>requestAnimationFrame(drawEdges));
     try{
       state.csrf=(await request("/api/session")).csrf_token;
