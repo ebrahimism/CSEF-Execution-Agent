@@ -16,6 +16,7 @@ from jsonschema import Draft202012Validator, ValidationError, SchemaError
 
 from ..backends import PROPOSAL_SCHEMA
 from ..core import Refused, digest, encoded, parse_json, relative_name
+from . import usage as provider_usage
 
 MAX_RESPONSE = 1_000_000
 ENDPOINTS = {
@@ -81,6 +82,7 @@ def _text_and_usage(provider: str, response: dict) -> tuple[str, dict, str | Non
             "input_tokens": raw_usage.get("input_tokens"),
             "output_tokens": raw_usage.get("output_tokens"),
             "cached_input_tokens": details.get("cached_tokens") if isinstance(details, dict) else None,
+            "cache_creation_input_tokens": None,
         }
     else:
         if response.get("stop_reason") != "end_turn":
@@ -94,13 +96,80 @@ def _text_and_usage(provider: str, response: dict) -> tuple[str, dict, str | Non
             "input_tokens": raw_usage.get("input_tokens"),
             "output_tokens": raw_usage.get("output_tokens"),
             "cached_input_tokens": raw_usage.get("cache_read_input_tokens"),
+            "cache_creation_input_tokens": raw_usage.get("cache_creation_input_tokens"),
         }
+    usage = {key: _usage_count(value, key) for key, value in usage.items()}
+    if usage["input_tokens"] is not None and usage["cached_input_tokens"] is not None:
+        if provider == "openai" and usage["cached_input_tokens"] > usage["input_tokens"]:
+            raise Refused("cached input usage exceeds total input")
     if not parts or not all(isinstance(p, str) for p in parts):
         raise Refused("provider did not return a complete text message")
     text = "".join(parts)
     if not text or len(text.encode("utf-8")) > MAX_RESPONSE:
         raise Refused("empty or oversized provider content")
     return text, usage, response.get("model")
+
+
+
+def _native_schema(schema: dict) -> dict:
+    """Provider-compatible structural subset; local validator enforces full oracle.
+
+    Both APIs constrain generation using their native JSON-schema controls.
+    Unsupported length/count/format restrictions stay in the *local* validator
+    and are not silently treated as having been checked by the provider.
+    """
+    if not isinstance(schema, dict):
+        raise Refused("provider schema must be a JSON object")
+    if schema.get("type") != "object":
+        raise Refused("native schema root must be an object")
+    allowed = {"type", "properties", "required", "additionalProperties",
+               "items", "enum", "const", "anyOf", "description", "$defs"}
+    def adapt(x):
+        if not isinstance(x, dict):
+            raise Refused("invalid nested native schema")
+        if "$ref" in x:
+            raise Refused("references in native schema require an explicit versioned mapping")
+        out = {}
+        for key, value in x.items():
+            if key not in allowed:
+                continue  # Local full-schema validation still mandatory.
+            if key == "const":
+                out["enum"] = [value]
+            elif key == "properties":
+                if not isinstance(value, dict):
+                    raise Refused("native schema properties must be a map")
+                out["properties"] = {name: adapt(child) for name, child in value.items()}
+            elif key in ("items",):
+                out[key] = adapt(value)
+            elif key in ("anyOf",):
+                if not isinstance(value, list) or not value:
+                    raise Refused("native schema anyOf must be nonempty")
+                out[key] = [adapt(child) for child in value]
+            elif key == "$defs":
+                if not isinstance(value, dict):
+                    raise Refused("native schema definitions must be a map")
+                out[key] = {name: adapt(child) for name, child in value.items()}
+            else:
+                out[key] = value
+        if out.get("type") == "object":
+            props = out.get("properties", {})
+            if out.get("additionalProperties", False) is not False:
+                raise Refused("unbounded native object fields are not supported")
+            if set(out.get("required", [])) != set(props):
+                # OpenAI and Claude strict output grammar require fully
+                # declared keys. Do not fill unknown optional fields.
+                raise Refused("strict native schema requires all properties")
+            out["additionalProperties"] = False
+        return out
+    return adapt(schema)
+
+
+def _usage_count(value, label):
+    if value is None:
+        return None
+    if type(value) is not int or value < 0:
+        raise Refused("invalid provider usage: " + label)
+    return value
 
 
 class DirectAPI:
@@ -130,6 +199,7 @@ class DirectAPI:
             Draft202012Validator.check_schema(schema)
         except (SchemaError, TypeError):
             raise Refused("invalid provider output schema") from None
+        native_schema = _native_schema(schema)
         folder.mkdir(parents=True, exist_ok=False)
         (folder / "schema.json").write_bytes(encoded(schema))
         (folder / "prompt.txt").write_text(prompt, encoding="utf-8")
@@ -140,14 +210,19 @@ class DirectAPI:
             payload = {"model": self.model, "input": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": prompt}
-            ], "store": False, "max_output_tokens": 8192}
+            ], "store": False, "max_output_tokens": 8192,
+                "text": {"format": {"type": "json_schema", "name": "csef_contract_v1",
+                                    "schema": native_schema, "strict": True}}}
             headers = {"Authorization": "Bearer " + self.api_key}
         else:
             payload = {"model": self.model, "system": system, "messages": [
                 {"role": "user", "content": prompt}
-            ], "max_tokens": 8192}
+            ], "max_tokens": 8192,
+                "output_config": {"format": {"type": "json_schema", "schema": native_schema}}}
             headers = {"x-api-key": self.api_key, "anthropic-version": "2023-06-01"}
         started = time.monotonic()
+        # Reserve durable intent before contacting either billable API.
+        row_id = provider_usage.reserve(control, self.provider, self.model, role)
         try:
             response = self._send(self.endpoint, headers, payload, timeout)
             if not isinstance(response, dict):
@@ -157,16 +232,27 @@ class DirectAPI:
             if not isinstance(value, dict):
                 raise Refused("provider output is not a JSON object")
             Draft202012Validator(schema).validate(value)
+            estimated = provider_usage.estimate(self.provider, self.model, usage)
         except (ValidationError, ValueError, TypeError, UnicodeError):
+            provider_usage.settle(control, row_id, completed=False)
             raise Refused("provider output failed strict JSON schema validation") from None
+        except BaseException:
+            # Treat all interrupted/failed outcomes as unknown for quota accounting.
+            provider_usage.settle(control, row_id, completed=False)
+            raise
+        provider_usage.settle(control, row_id, completed=True)
         receipt = {
             "contract_version": 1, "adapter": self.provider + "-direct",
             "provider": self.provider, "model": self.model,
             "reported_model": reported, "role": role,
             "prompt_utf8_bytes": len(prompt.encode("utf-8")),
             "schema_sha256": digest(encoded(schema)),
+            "native_schema_sha256": digest(encoded(native_schema)),
+            "format_contract": "native_json_schema_v1",
             "elapsed_s": round(time.monotonic() - started, 3),
             "usage": usage, "cost_usd": None,
+            "cost_estimate_usd": estimated, "pricing_origin":
+                "owner_provided_versioned_file" if estimated is not None else None,
             "cost_note": "Token usage only; no price or USD savings inferred.",
             "exit_code": 0, "outcome": "completed",
         }
