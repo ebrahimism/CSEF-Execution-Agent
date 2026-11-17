@@ -93,7 +93,7 @@ def test_valid_graph_does_not_claim_completion(book):
     ("extra_fact", "unknown or unapproved"),
     ("no_code_file", "scoped"),
     ("bad_path", "file path"),
-    ("skip_integrate", "include integration"),
+    ("skip_integrate", "integration criteria"),
     ("not_deliverable", "final delivery"),
     ("weak_requirement", "executable or integration"),
     ("unknown_key", "versioned JSON"),
