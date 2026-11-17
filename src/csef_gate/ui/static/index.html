@@ -220,6 +220,26 @@
       <div class="modal-actions"><button type="button" class="outline-button" id="cancel-plan" data-i18n="cancel">انصراف</button><button type="submit" class="primary-button" id="run-plan" data-i18n="runPlanner">تولید طرح</button></div>
     </form>
   </dialog>
+  <dialog id="review-dialog" class="modal" aria-labelledby="review-dialog-title">
+    <form class="modal-inner" id="review-form">
+      <div class="modal-top">
+        <div class="modal-icon"><svg><use href="#i-shield"/></svg></div>
+        <button type="button" class="modal-close" id="close-review" aria-label="Close">×</button>
+      </div>
+      <h2 id="review-dialog-title" data-i18n="reviewTitle">آزمون محدود REVIEW</h2>
+      <p data-i18n="reviewDescription">فقط پس از بازبینی دستی کد و انتخاب تصویر Docker با digest ثابت. این آزمون PASS یا مجوز تحویل صادر نمی‌کند.</p>
+      <label for="review-run-id" data-i18n="runIdLabel">شناسهٔ اجرا</label>
+      <input id="review-run-id" readonly dir="ltr">
+      <label for="review-image" data-i18n="dockerImage">تصویر Docker با SHA-256 ثابت</label>
+      <input id="review-image" dir="ltr" required
+        placeholder="python:3.11-slim@sha256:YOUR_REAL_64_HEX_DIGEST">
+      <label class="consent"><input id="review-source-confirm" type="checkbox" required><span data-i18n="reviewConsent">کد این اجرا را شخصاً بررسی کرده‌ام و اجرای آزمایشی را مجاز می‌دانم.</span></label>
+      <div class="modal-actions">
+        <button type="button" class="outline-button" id="cancel-review" data-i18n="cancel">انصراف</button>
+        <button type="submit" class="primary-button" id="submit-review" data-i18n="runReview">اجرای آزمون محدود</button>
+      </div>
+    </form>
+  </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
