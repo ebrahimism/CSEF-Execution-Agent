@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ..core import Refused, digest, encoded, parse_json, plain, read_json
+from ..core import Gate, Refused, digest, manifest, parse_json, plain
 from ..project import ProjectBook
 from ..persistence.sqlite import DATABASE
 from ..providers.usage import snapshot as provider_snapshot
@@ -90,21 +90,50 @@ def inspection(book: ProjectBook) -> dict:
             "verified_boundary": verified_boundary,
             "cases": cases,
         })
+    # Reuse Gate's already frozen spec and manifest; never mark a checkpoint
+    # valid solely from an unverified database flag or a passing report string.
+    spec = spec_sha = None
+    if gate_config is not None:
+        try:
+            spec, spec_sha = Gate(book.root).spec()
+        except (Refused, OSError, KeyError, TypeError, ValueError):
+            pass
     for run in runs:
         ck = checkpoint_by_run.get(run["id"])
         ev = evaluation_by_id.get(ck["evaluation_id"]) if ck else None
         report = _valid_report(ev["report"], ev["report_hash"]) if ev else None
-        run["accepted_checkpoint"] = bool(
-            ck and ev and run["status"] == "accepted"
+        trusted = bool(
+            spec is not None and ck and ev and run["status"] == "accepted"
+            and ev["id"] == ck["evaluation_id"]
             and ev["status"] == "pass"
             and ev["report_hash"] == ck["report_hash"]
             and ev["source_hash"] == ck["source_hash"]
-            and ev["spec_hash"] == ck["spec_hash"]
+            and ev["spec_hash"] == ck["spec_hash"] == spec_sha
             and report and report.get("status") == "pass"
             and report.get("measurement_only") is False
+            and report.get("run_id") == run["id"]
+            and report.get("evaluation_id") == ev["id"]
+            and report.get("source_sha256") == ck["source_hash"]
+            and report.get("spec_sha256") == spec_sha
             and isinstance(report.get("boundary"), dict)
             and report["boundary"].get("verified") is True
-            and report.get("project_sha256") == owner["sha256"])
+            and report.get("project_sha256") == owner["sha256"]
+            and len(report.get("cases", [])) == len(spec["cases"])
+            and [x.get("id") for x in report.get("cases", [])] ==
+                [x["id"] for x in spec["cases"]]
+            and all(x.get("passed") is True for x in report.get("cases", [])))
+        if trusted:
+            try:
+                snapshot = Path(ck["snapshot"])
+                plain(snapshot)
+                candidate = book.root / "runs" / run["id"] / "candidate"
+                plain(candidate)
+                trusted = (manifest(snapshot, spec["source_files"])[0] ==
+                           manifest(candidate, spec["source_files"])[0] ==
+                           ck["source_hash"])
+            except (OSError, Refused, ValueError, TypeError):
+                trusted = False
+        run["accepted_checkpoint"] = bool(trusted)
         run["delivery_package"] = "not_tracked"
         run["can_resume_automatically"] = False
         run["resume_reason"] = "requires_trusted_reconciliation"
