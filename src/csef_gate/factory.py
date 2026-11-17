@@ -136,6 +136,15 @@ def plan_brief(book: ProjectBook, client, *, templates: Path | None = None) -> d
             "spec_kit_proposal_id": stored["proposal_id"], "planner_receipt": {
                 "adapter": receipt.get("adapter"), "model": receipt.get("model"),
                 "usage": receipt.get("usage"), "cost_usd": receipt.get("cost_usd")}}
+    # Persist the complete proposed plan in the SAME owner-controlled SQLite
+    # store. A modified plan.json cannot bypass an unresolved question.
+    with book.connection() as con:
+        con.execute("BEGIN IMMEDIATE")
+        plan_id = con.execute(
+            "INSERT INTO changes(proposal,status,created) VALUES(?,'proposed',?)",
+            (encoded({"type": "factory_plan", "body": plan}).decode(), now())
+        ).lastrowid
+    plan["factory_record_id"] = plan_id
     (folder / "plan.json").write_bytes(encoded(plan))
     return {"status": "needs_owner" if questions else "proposed",
             "release_approved": False, "plan_path": str(folder / "plan.json"),
@@ -151,8 +160,16 @@ def _read_plan(book: ProjectBook, path: Path) -> tuple[dict, dict]:
     plan = read_json(path)
     if not isinstance(plan, dict) or set(plan) != {
             "format", "graph", "questions", "spec_kit_bundle_sha256",
-            "spec_kit_proposal_id", "planner_receipt"} or plan["format"] != "csef-factory-plan-v1":
+            "spec_kit_proposal_id", "planner_receipt", "factory_record_id"
+            } or plan["format"] != "csef-factory-plan-v1":
         raise Refused("unsupported factory plan format")
+    with book.connection() as con:
+        saved = con.execute("SELECT proposal,status FROM changes WHERE id=?",
+                            (plan["factory_record_id"],)).fetchone()
+    original = {k: v for k, v in plan.items() if k != "factory_record_id"}
+    if (saved is None or saved["status"] != "proposed" or
+            saved["proposal"] != encoded({"type": "factory_plan", "body": original}).decode()):
+        raise Refused("factory plan changed after generation; owner must regenerate")
     validate_graph(book.current(), plan["graph"])
     bundle = read_bundle(path.parent / "spec-kit")
     if (bundle["project"] != book.current()
@@ -342,9 +359,10 @@ def build_plan(book: ProjectBook, plan_path: Path, project: Path, oracle: Path,
     validate_spec(spec)
     owned = {f for task in graph["tasks"] for f in task["files"]}
     source_files = set(spec["source_files"])
-    if (owned != set(spec["editable_files"]) or source_files != owned
-            or {case["id"] for case in spec["cases"]} != {
-                tid for task in graph["tasks"] for tid in task["test_ids"]}):
+    planned_tests = [tid for task in graph["tasks"] for tid in task["test_ids"]]
+    if (len(set(planned_tests)) != len(planned_tests)
+            or owned != set(spec["editable_files"]) or source_files != owned
+            or {case["id"] for case in spec["cases"]} != set(planned_tests)):
         raise Refused("independent oracle inventory and cases must cover the exact proposed slice")
     if len(graph["tasks"]) > spec["max_attempts"]:
         raise Refused("one Gate slice supports at most max_attempts bounded task proposals")
